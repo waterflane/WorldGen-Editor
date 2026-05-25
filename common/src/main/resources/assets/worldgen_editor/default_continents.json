@@ -1,0 +1,67 @@
+{
+  "enabled": true,
+  "entries": [
+    {
+      "name": "Spawn Island",
+      "x": 0,
+      "z": 0,
+      "radius": 850,
+      "roughness": 0.2,
+      "noise": {
+        "seed": "spawn"
+      }
+    },
+    {
+      "name": "Northern Long Island",
+      "x": -1350,
+      "z": -950,
+      "radius": 520,
+      "stretch_x": 1.55,
+      "stretch_z": 0.78,
+      "rotation": -28,
+      "roughness": 0.16,
+      "noise": {
+        "seed": "north_long"
+      }
+    },
+    {
+      "name": "Eastern Highlands",
+      "x": 1420,
+      "z": -450,
+      "radius": 610,
+      "stretch_x": 1.05,
+      "stretch_z": 1.28,
+      "rotation": 18,
+      "roughness": 0.22,
+      "noise": {
+        "seed": "east_highlands",
+        "scale": 3.6
+      }
+    },
+    {
+      "name": "Southern Small Island",
+      "x": 620,
+      "z": 1460,
+      "radius": 360,
+      "rotation": 8,
+      "roughness": 0.12,
+      "noise": {
+        "seed": "south_small",
+        "amplitudes": [1.0, 0.6, 0.35]
+      }
+    },
+    {
+      "name": "Western Small Island",
+      "x": -1780,
+      "z": 840,
+      "radius_x": 470,
+      "radius_z": 330,
+      "rotation": 31,
+      "roughness": 0.24,
+      "noise": {
+        "seed": "west_small",
+        "scale": 3.9
+      }
+    }
+  ]
+}

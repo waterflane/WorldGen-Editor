@@ -1,0 +1,35 @@
+modLoader = "javafml"
+loaderVersion = "[2,)"
+#issueTrackerURL = ""
+license = "MIT"
+
+[[mods]]
+modId = "worldgen_editor"
+version = "${version}"
+displayName = "WorldGen Editor"
+authors = "waterflane"
+description = '''
+JSON-driven Overworld island generation for modded Minecraft.
+'''
+#logoFile = ""
+
+[[dependencies.worldgen_editor]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.worldgen_editor]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.worldgen_editor]]
+modId = "architectury"
+type = "required"
+versionRange = "[13.0.8,)"
+ordering = "AFTER"
+side = "BOTH"

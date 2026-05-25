@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "[52,)"
+license = "MIT"
+
+[[mods]]
+modId = "worldgen_editor"
+version = "${version}"
+displayName = "WorldGen Editor"
+authors = "waterflane"
+description = '''
+JSON-driven Overworld island generation for modded Minecraft.
+'''
+displayTest = "MATCH_VERSION"
+
+[[dependencies.worldgen_editor]]
+modId = "forge"
+mandatory = true
+versionRange = "[52,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.worldgen_editor]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.21.1,1.22)"
+ordering = "NONE"
+side = "BOTH"

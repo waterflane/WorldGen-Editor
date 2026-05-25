@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "worldgen_editor",
+  "version": "${version}",
+  "name": "WorldGen Editor",
+  "description": "JSON-driven Overworld island generation for modded Minecraft.",
+  "authors": [
+    "waterflane"
+  ],
+  "contact": {
+    "homepage": "https://www.patreon.com/waterflane_dev"
+  },
+  "license": "MIT",
+  "icon": "assets/worldgen_editor/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "org.wodichka.worldgen_editor.fabric.Worldgen_editorFabric"
+    ],
+    "client": [
+      "org.wodichka.worldgen_editor.fabric.client.Worldgen_editorFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "architectury": ">=13.0.8",
+    "fabric-api": "*"
+  },
+  "suggests": {}
+}
