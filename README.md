@@ -132,11 +132,8 @@ Minimal example:
 
 ## Preview Tool
 
-The companion preview tool is located outside this repository folder:
-
-```text
-C:\Programming\IdeaProjects\WorldGen Editor Preview
-```
+The companion preview tool is located outside this repository folder: 
+[WorldGen Editor Preview](../WorldGen%20Editor%20Preview)
 
 Open `index.html` in a browser to preview island masks without generating Minecraft worlds.
 
