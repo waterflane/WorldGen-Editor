@@ -1,39 +1,39 @@
-# WorldGen Editor: guide по `continents.json`
+# WorldGen Editor: `continents.json` Guide
 
-Мод теперь работает в стиле datapack/world preset. Это значит, что для нового мира нужно выбрать тип мира:
+The mod now works through a datapack-style world preset. For a new world, choose this world type:
 
 ```text
 WorldGen Editor: Islands
 ```
 
-Внутри этого пресета Minecraft использует обычный `minecraft:noise` генератор, но с двумя модовыми ресурсами:
+Inside this preset, Minecraft still uses the normal `minecraft:noise` generator, but with two modded worldgen resources:
 
-- `worldgen_editor:island_biome_source` - заранее выбирает океан/сушу на уровне biome source.
-- `worldgen_editor:island_final_density` - мягко меняет vanilla density, чтобы океан был вокруг островов.
+- `worldgen_editor:island_biome_source` selects ocean and land biomes before chunk generation.
+- `worldgen_editor:island_final_density` softly reshapes vanilla density so oceans form around configured islands.
 
-Это намного стабильнее, чем старая runtime-подмена уже созданного генератора.
+This is much more stable than replacing generator internals after the vanilla generator has already been created.
 
-## Где лежит конфиг
+## Config Location
 
-Основной файл:
+Main config file:
 
 ```text
 config/worldgen_editor/continents.json
 ```
 
-Если файла нет, мод создаст базовый пример сам.
+If the file does not exist, the mod creates a default archipelago example.
 
-После изменения конфига в уже запущенном мире выполни:
+After editing the config while a world is already running, use:
 
 ```text
 /worldgen_editor reload
 ```
 
-`reload` влияет только на новые чанки. Уже сгенерированные чанки, биомы, структуры и блоки Minecraft не пересоздает.
+`reload` only affects newly generated chunks. Minecraft does not rebuild already generated chunks, biomes, structures, or blocks.
 
-## Включение
+## Enabling
 
-В обычном конфиге есть верхнеуровневый параметр:
+The normal config has a top-level flag:
 
 ```json
 {
@@ -42,16 +42,16 @@ config/worldgen_editor/continents.json
 }
 ```
 
-- `enabled: false` - островная маска не применяется, даже если выбран island preset.
-- `enabled: true` - островная генерация разрешена для миров, где world-флаг тоже включен.
+- `enabled: false` means the island mask is not applied, even when the island world preset is selected.
+- `enabled: true` allows island generation in worlds where the per-world flag is also enabled.
 
-Для каждого мира мод хранит отдельный файл:
+For each world, the mod stores an extra file:
 
 ```text
-<папка_мира>/worldgen_editor/worldgen_editor.json
+<world_folder>/worldgen_editor/worldgen_editor.json
 ```
 
-Новый файл создается с:
+New world-state files are created as:
 
 ```json
 {
@@ -59,13 +59,13 @@ config/worldgen_editor/continents.json
 }
 ```
 
-Итоговая логика:
+Final logic:
 
 ```text
-генерация включена = continents.json enabled && worldgen_editor.json enabled
+generation enabled = continents.json enabled && worldgen_editor.json enabled
 ```
 
-Команды:
+Commands:
 
 ```text
 /worldgen_editor enable
@@ -74,9 +74,9 @@ config/worldgen_editor/continents.json
 /worldgen_editor reload
 ```
 
-## Самый простой остров
+## Smallest Valid Island
 
-Минимально нужны центр и радиус:
+At minimum, an island needs a center and a radius:
 
 ```json
 {
@@ -91,9 +91,9 @@ config/worldgen_editor/continents.json
 }
 ```
 
-Такой остров появится вокруг координат `0, 0`.
+This creates one roughly round island around coordinates `0, 0`.
 
-## Рекомендуемый пример
+## Recommended Example
 
 ```json
 {
@@ -127,22 +127,22 @@ config/worldgen_editor/continents.json
 }
 ```
 
-## Основные поля острова
+## Island Fields
 
-- `name` - необязательное имя для удобства.
-- `x` - центр острова по X.
-- `z` - центр острова по Z.
-- `radius` - базовый размер острова.
-- `radius_x` и `radius_z` - отдельные радиусы, если нужна точная вытянутая форма.
-- `stretch_x` и `stretch_z` - множители растяжения при использовании `radius`.
-- `rotation` - поворот острова в градусах.
-- `roughness` - сила шума берега от `0.0` до `1.0`.
-- `shore_width` - ширина мягкого перехода между сушей и океаном.
-- `overlap` - можно ли маске острова усиливать другие острова.
+- `name` is an optional display name.
+- `x` is the island center on the X axis.
+- `z` is the island center on the Z axis.
+- `radius` is the base island size.
+- `radius_x` and `radius_z` define separate radii for more precise stretched shapes.
+- `stretch_x` and `stretch_z` multiply the base radius.
+- `rotation` rotates the island in degrees.
+- `roughness` controls coastline noise strength from `0.0` to `1.0`.
+- `shore_width` controls the soft transition width between land and ocean.
+- `overlap` controls whether this island can add its mask on top of other islands.
 
-Обычно достаточно менять `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `rotation` и `roughness`.
+Most of the time, you only need `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `rotation`, and `roughness`.
 
-## Шум берега
+## Coast Noise
 
 ```json
 {
@@ -159,26 +159,26 @@ config/worldgen_editor/continents.json
 }
 ```
 
-- `noise.seed` меняет форму берега, но не центр и размер острова.
-- `noise.scale` повышает частоту шума.
-- `noise.first_octave` обычно можно оставить `-1`.
-- `noise.amplitudes` управляет вкладом октав.
+- `noise.seed` changes the coastline shape without changing island center or size.
+- `noise.scale` increases noise frequency.
+- `noise.first_octave` can usually stay at `-1`.
+- `noise.amplitudes` controls octave weights.
 
-Более гладкий берег:
+Smoother coastline:
 
 ```json
 "roughness": 0.08
 ```
 
-Более рваный берег:
+Rougher coastline:
 
 ```json
 "roughness": 0.25
 ```
 
-## Совместимость со старым форматом
+## Old Format Compatibility
 
-Мод продолжает понимать старые имена:
+The mod still understands older field names:
 
 - `center_x` = `x`
 - `center_z` = `z`
@@ -187,21 +187,21 @@ config/worldgen_editor/continents.json
 - `rotation_degrees` = `rotation`
 - `multiplier` = `size_multiplier`
 
-Новый формат короче, но старые datapack-style файлы не обязаны ломаться.
+The new format is shorter, but older datapack-style files should continue to work.
 
-## Важные ограничения
+## Important Limits
 
-- Для островной генерации выбирай пресет `WorldGen Editor: Islands` при создании мира.
-- Переключение конфига после создания мира не пересоздает старые чанки.
-- Если хочешь полностью новый результат без конфликтов, создай новый мир или удали старые region-файлы осознанно.
-- Острова используют vanilla land biomes внутри маски. Мод не рисует реки и болота вручную.
-- Океан вокруг островов создается через noise settings и biome source, а не поздней подменой блоков.
+- Select the `WorldGen Editor: Islands` world preset when creating an island world.
+- Changing the config after world creation does not rebuild old chunks.
+- For a completely clean result, create a new world or deliberately delete old region files.
+- Islands use vanilla land biomes inside the island mask. The mod does not manually draw rivers or swamps.
+- Ocean around islands is produced through noise settings and biome source, not by late block replacement.
 
-## Частые проблемы
+## Common Issues
 
-- Остров не появился: проверь, что выбран world preset `WorldGen Editor: Islands`.
-- Мир выглядит vanilla: проверь `enabled` в `continents.json` и `/worldgen_editor status`.
-- Изменил JSON, но рядом ничего не поменялось: ты смотришь на уже сгенерированные чанки.
-- Сломался reload: проверь запятые, кавычки и обязательные поля `x`, `z`, `radius`.
-- Слишком острые берега: уменьши `roughness` или увеличь `shore_width`.
-- Остров слишком низкий или маленький: увеличь `radius`; очень маленькие острова чаще попадают под vanilla lowland/river terrain.
+- The island did not appear: check that the world preset is `WorldGen Editor: Islands`.
+- The world looks vanilla: check `enabled` in `continents.json` and `/worldgen_editor status`.
+- JSON changed but the nearby terrain did not: you are looking at already generated chunks.
+- Reload failed: check commas, quotes, and required fields `x`, `z`, and `radius`.
+- Shores are too sharp: lower `roughness` or increase `shore_width`.
+- The island is too low or too small: increase `radius`; very small islands are more affected by vanilla lowland or river terrain.
