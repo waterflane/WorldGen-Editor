@@ -17,6 +17,7 @@ replay_pid*
 run/
 **/run/
 config/
+release/
 logs/
 crash-reports/
 saves/

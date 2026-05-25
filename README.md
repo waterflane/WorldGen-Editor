@@ -53,6 +53,18 @@ forge/build/libs/worldgen-editor-forge-1.0.0.jar
 neoforge/build/libs/worldgen-editor-neoforge-1.0.0.jar
 ```
 
+For convenience, the root `build` task also copies the three loader-ready jars into:
+
+```text
+release/
+```
+
+You can run the copy task directly:
+
+```powershell
+.\gradlew.bat releaseJars --no-daemon
+```
+
 The version is controlled by `mod_version` in `gradle.properties`.
 
 ## Project Layout

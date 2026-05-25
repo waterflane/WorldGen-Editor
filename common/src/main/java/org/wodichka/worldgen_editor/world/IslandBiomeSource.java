@@ -76,27 +76,6 @@ public final class IslandBiomeSource extends BiomeSource {
             }
         }
 
-        if (island < IslandTerrainHooks.BEACH_END_MASK && isNearOcean(mask, blockX, blockZ)) {
-            Holder<Biome> beach = IslandWorldState.beachBiome();
-            if (beach != null) {
-                return beach;
-            }
-        }
-
-        Holder<Biome> vanilla = delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
-        if (IslandWorldState.isOceanBiome(vanilla)) {
-            Holder<Biome> land = IslandWorldState.landBiome(island, blockX, blockZ);
-            if (land != null) {
-                return land;
-            }
-        }
-        return vanilla;
-    }
-
-    private static boolean isNearOcean(IslandMask mask, int blockX, int blockZ) {
-        return mask.sample(blockX + 48, blockZ) < IslandTerrainHooks.BEACH_START_MASK
-                || mask.sample(blockX - 48, blockZ) < IslandTerrainHooks.BEACH_START_MASK
-                || mask.sample(blockX, blockZ + 48) < IslandTerrainHooks.BEACH_START_MASK
-                || mask.sample(blockX, blockZ - 48) < IslandTerrainHooks.BEACH_START_MASK;
+        return delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
     }
 }

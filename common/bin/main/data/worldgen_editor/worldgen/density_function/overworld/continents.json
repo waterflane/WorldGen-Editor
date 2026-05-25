@@ -1,0 +1,4 @@
+{
+  "type": "worldgen_editor:island_continents",
+  "argument": "minecraft:overworld/continents"
+}
