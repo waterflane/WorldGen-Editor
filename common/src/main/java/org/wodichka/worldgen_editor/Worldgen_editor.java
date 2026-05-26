@@ -1,9 +1,6 @@
 package org.wodichka.worldgen_editor;
 
 import org.wodichka.worldgen_editor.world.IslandWorldState;
-import org.wodichka.worldgen_editor.world.IslandBiomeSource;
-import org.wodichka.worldgen_editor.world.IslandContinentsFunction;
-import org.wodichka.worldgen_editor.world.IslandDensityFunction;
 
 public final class Worldgen_editor {
     public static final String MOD_ID = "worldgen_editor";
@@ -19,9 +16,6 @@ public final class Worldgen_editor {
         }
 
         initialized = true;
-        IslandBiomeSource.register();
-        IslandContinentsFunction.register();
-        IslandDensityFunction.register();
         IslandWorldState.loadGlobalConfig();
     }
 }
