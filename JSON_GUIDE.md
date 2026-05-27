@@ -23,6 +23,14 @@ config/worldgen_editor/continents.json
 
 If the file does not exist, the mod creates a default archipelago example.
 
+The file is read:
+
+- once when the mod initializes, so a default file can be created early;
+- again when a world/server starts, before the island mask is rebuilt for that world's seed;
+- again when `/worldgen_editor reload` is used.
+
+This means you can edit `continents.json` from the main menu and then create a new world without restarting the game.
+
 After editing the config while a world is already running, use:
 
 ```text
@@ -161,8 +169,82 @@ Most of the time, you only need `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `r
 
 - `noise.seed` changes the coastline shape without changing island center or size.
 - `noise.scale` increases noise frequency.
-- `noise.first_octave` can usually stay at `-1`.
-- `noise.amplitudes` controls octave weights.
+- `noise.first_octave` controls the starting octave, which mostly means the size of the largest coastline waves.
+- `noise.amplitudes` controls how much each octave contributes to the final coastline shape.
+
+### `noise.first_octave`
+
+You can usually leave this at `-1`.
+
+The mod builds coastline noise from several layers, also called octaves. Each next octave is twice as detailed as the previous one. `first_octave` decides where that stack starts:
+
+- `-2` starts with larger, slower coastline bends.
+- `-1` is the default and works well for most islands.
+- `0` starts with smaller, faster coastline variation.
+- `1` and higher can make the edge busy and noisy, especially on small islands.
+
+Practical tuning:
+
+```json
+"first_octave": -2
+```
+
+Use this when a large island should have broad bays and capes instead of small jagged edges.
+
+```json
+"first_octave": -1
+```
+
+Use this as the normal default.
+
+```json
+"first_octave": 0
+```
+
+Use this only when you want more small-scale coastline wobble.
+
+### `noise.amplitudes`
+
+`amplitudes` is a list of octave strengths. The first number affects the first octave, the second number affects the next octave, and so on.
+
+Default:
+
+```json
+"amplitudes": [1.0, 0.78, 0.55, 0.34]
+```
+
+This means:
+
+- `1.0`: strongest large coastline shape.
+- `0.78`: medium details still matter.
+- `0.55`: smaller details are visible.
+- `0.34`: fine details are present, but weaker.
+
+Smoother, simpler coast:
+
+```json
+"amplitudes": [1.0, 0.45, 0.18]
+```
+
+More detailed coast:
+
+```json
+"amplitudes": [1.0, 0.85, 0.65, 0.45, 0.25]
+```
+
+Very smooth, almost ellipse-like coast:
+
+```json
+"amplitudes": [1.0]
+```
+
+Rules of thumb:
+
+- Keep the first value near `1.0`.
+- Let later values get smaller.
+- Avoid many strong values like `[1.0, 1.0, 1.0, 1.0]` unless you intentionally want a chaotic coast.
+- If coastlines look noisy, reduce later amplitudes first.
+- If coastlines look too round, increase `roughness` before making amplitudes extreme.
 
 Smoother coastline:
 

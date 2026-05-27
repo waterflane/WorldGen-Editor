@@ -47,14 +47,23 @@ public final class IslandWorldState {
     }
 
     public static void loadGlobalConfig() {
+        loadGlobalConfig("init", false);
+    }
+
+    private static void loadGlobalConfig(String phase, boolean keepPreviousOnFailure) {
         try {
             IslandConfig config = IslandConfigLoader.loadOrCreate();
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {}", config.entries().size(), IslandConfigLoader.CONFIG_PATH);
+            LOGGER.info("Loaded {} island entries from {} during {}", config.entries().size(), IslandConfigLoader.CONFIG_PATH, phase);
         } catch (IslandConfigException exception) {
-            LOGGER.error("Failed to load island config at init: {}", exception.getMessage());
+            if (keepPreviousOnFailure) {
+                LOGGER.error("Keeping previous island config because {} load failed: {}", phase, exception.getMessage());
+                return;
+            }
+
+            LOGGER.error("Failed to load island config during {}: {}", phase, exception.getMessage());
             CONFIG.set(IslandConfig.EMPTY);
             MASK.set(new IslandMask(IslandConfig.EMPTY, worldSeed));
             enabled = false;
@@ -63,6 +72,7 @@ public final class IslandWorldState {
 
     public static void loadForServer(MinecraftServer server) {
         worldSeed = server.overworld().getSeed();
+        loadGlobalConfig("world start", false);
         worldStatePath = server.getWorldPath(LevelResource.ROOT).resolve(Worldgen_editor.MOD_ID).resolve("worldgen_editor.json");
         worldEnabled = loadOrCreateWorldState(worldStatePath);
         enabled = effectiveEnabled();
@@ -83,7 +93,7 @@ public final class IslandWorldState {
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {}", config.entries().size(), IslandConfigLoader.CONFIG_PATH);
+            LOGGER.info("Loaded {} island entries from {} during reload", config.entries().size(), IslandConfigLoader.CONFIG_PATH);
             return true;
         } catch (IslandConfigException exception) {
             LOGGER.error("Keeping previous island config because reload failed: {}", exception.getMessage());

@@ -25,3 +25,5 @@ crash-reports/
 saves/
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+
+MODRINTH_DESCRIPTION.md
