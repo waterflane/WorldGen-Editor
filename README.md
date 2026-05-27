@@ -17,7 +17,7 @@ The project is built with Architectury Loom and targets:
 - Backward-compatible support for older field names such as `center_x`, `center_z`, `x_divisor`, and `z_divisor`.
 - Built-in world preset: `WorldGen Editor: Islands`.
 - Runtime commands for reload and per-world enable state.
-- Separate preview tool for developers: [WorldGen Editor Preview](../WorldGen%20Editor%20Preview).
+- Separate preview tool for developers: [WorldGen Editor Preview](https://github.com/waterflane/WorldGen-Editor-Preview).
 
 ## Requirements
 
@@ -48,9 +48,9 @@ On Linux or macOS:
 The production jars are created here:
 
 ```text
-fabric/build/libs/worldgen-editor-fabric-1.0.0.jar
-forge/build/libs/worldgen-editor-forge-1.0.0.jar
-neoforge/build/libs/worldgen-editor-neoforge-1.0.0.jar
+fabric/build/libs/worldgen-editor-fabric-0.1.0 beta.jar
+forge/build/libs/worldgen-editor-forge-0.1.0 beta.jar
+neoforge/build/libs/worldgen-editor-neoforge-0.1.0 beta.jar
 ```
 
 For convenience, the root `build` task also copies the three loader-ready jars into:
@@ -145,7 +145,7 @@ Minimal example:
 ## Preview Tool
 
 The companion preview tool is located outside this repository folder: 
-[WorldGen Editor Preview](../WorldGen%20Editor%20Preview)
+[WorldGen Editor Preview](https://github.com/waterflane/WorldGen-Editor-Preview)
 
 Open `index.html` in a browser to preview island masks without generating Minecraft worlds.
 

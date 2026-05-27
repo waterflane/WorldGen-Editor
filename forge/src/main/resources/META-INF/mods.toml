@@ -7,6 +7,7 @@ modId = "worldgen_editor"
 version = "${version}"
 displayName = "WorldGen Editor"
 authors = "waterflane"
+logoFile = "worldgen_editor_icon.png"
 description = '''
 JSON-driven Overworld island generation for modded Minecraft.
 '''

@@ -11,7 +11,7 @@ authors = "waterflane"
 description = '''
 JSON-driven Overworld island generation for modded Minecraft.
 '''
-#logoFile = ""
+logoFile = "worldgen_editor_icon.png"
 
 [[dependencies.worldgen_editor]]
 modId = "neoforge"
