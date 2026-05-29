@@ -13,7 +13,10 @@ The project is built with Architectury Loom and targets:
 ## Features
 
 - Configurable islands from `config/worldgen_editor/continents.json`.
-- Simple island fields such as `x`, `z`, `radius`, `rotation`, `roughness`, and `shore_width`.
+- Simple island fields such as `x`, `z`, `radius`, `rotation`, `shape_power`, `roughness`, and `shore_width`.
+- JSON entry types for normal islands, ocean-carved cuts, and generated archipelagos.
+- Per-entry biome exclusions with `exclude_biomes`, including biome ids and tags.
+- Climate-aware ocean and land fallback biome selection.
 - Backward-compatible support for older field names such as `center_x`, `center_z`, `x_divisor`, and `z_divisor`.
 - Built-in world preset: `WorldGen Editor: Islands`.
 - Runtime commands for reload and per-world enable state.
@@ -48,9 +51,9 @@ On Linux or macOS:
 The production jars are created here:
 
 ```text
-fabric/build/libs/worldgen-editor-fabric-0.1.0 beta.jar
-forge/build/libs/worldgen-editor-forge-0.1.0 beta.jar
-neoforge/build/libs/worldgen-editor-neoforge-0.1.0 beta.jar
+fabric/build/libs/worldgen-editor-fabric-0.2 beta.jar
+forge/build/libs/worldgen-editor-forge-0.2 beta.jar
+neoforge/build/libs/worldgen-editor-neoforge-0.2 beta.jar
 ```
 
 For convenience, the root `build` task also copies the three loader-ready jars into:
