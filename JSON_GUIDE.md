@@ -108,10 +108,12 @@ This creates one roughly round island around coordinates `0, 0`.
   "enabled": true,
   "entries": [
     {
+      "type": "island",
       "name": "Spawn Island",
       "x": 0,
       "z": 0,
       "radius": 950,
+      "shape_power": 2.2,
       "roughness": 0.16,
       "shore_width": 0.18,
       "noise": {
@@ -119,6 +121,43 @@ This creates one roughly round island around coordinates `0, 0`.
       }
     },
     {
+      "type": "ocean",
+      "name": "Central Strait",
+      "x": 360,
+      "z": 80,
+      "radius_x": 230,
+      "radius_z": 980,
+      "rotation": 24,
+      "shape_power": 1.35,
+      "roughness": 0.18,
+      "shore_width": 0.22,
+      "noise": {
+        "seed": "central_strait"
+      }
+    },
+    {
+      "type": "archipelago",
+      "name": "Western Archipelago",
+      "x": -1700,
+      "z": 720,
+      "radius": 1100,
+      "count": 16,
+      "min_radius": 90,
+      "max_radius": 250,
+      "spread": 0.88,
+      "spacing": 1.15,
+      "min_stretch": 0.7,
+      "max_stretch": 1.65,
+      "min_shape_power": 1.2,
+      "max_shape_power": 3.7,
+      "roughness": 0.22,
+      "shore_width": 0.17,
+      "noise": {
+        "seed": "western_archipelago"
+      }
+    },
+    {
+      "type": "island",
       "name": "Long Island",
       "x": 1350,
       "z": -650,
@@ -137,6 +176,7 @@ This creates one roughly round island around coordinates `0, 0`.
 
 ## Island Fields
 
+- `type` is optional. Supported values are `island`, `ocean`, and `archipelago`. If omitted, the entry is a normal `island`.
 - `name` is an optional display name.
 - `x` is the island center on the X axis.
 - `z` is the island center on the Z axis.
@@ -144,11 +184,88 @@ This creates one roughly round island around coordinates `0, 0`.
 - `radius_x` and `radius_z` define separate radii for more precise stretched shapes.
 - `stretch_x` and `stretch_z` multiply the base radius.
 - `rotation` rotates the island in degrees.
+- `shape_power` changes the base shape before coastline noise is applied. `2.0` is the old circle/ellipse behavior, lower values are sharper and more diamond-like, higher values are broader and more rounded-square.
 - `roughness` controls coastline noise strength from `0.0` to `1.0`.
 - `shore_width` controls the soft transition width between land and ocean.
 - `overlap` controls whether this island can add its mask on top of other islands.
 
-Most of the time, you only need `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `rotation`, and `roughness`.
+Most of the time, you only need `type`, `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `rotation`, `shape_power`, and `roughness`.
+
+## Entry Types
+
+### `type: "island"`
+
+This is the normal land-producing entry. Old entries without `type` still use this behavior.
+
+```json
+{
+  "type": "island",
+  "name": "Shaped Island",
+  "x": 0,
+  "z": 0,
+  "radius": 850,
+  "stretch_x": 1.4,
+  "stretch_z": 0.8,
+  "rotation": 18,
+  "shape_power": 2.6,
+  "roughness": 0.18
+}
+```
+
+### `type: "ocean"`
+
+Ocean entries carve water out of land entries. They are useful for straits, bays, inner seas, and unusual coast cuts. Order does not matter: ocean masks are applied after all land masks.
+
+```json
+{
+  "type": "ocean",
+  "name": "Cut Strait",
+  "x": 240,
+  "z": 0,
+  "radius_x": 180,
+  "radius_z": 900,
+  "rotation": 30,
+  "shape_power": 1.3,
+  "roughness": 0.2,
+  "shore_width": 0.22
+}
+```
+
+### `type: "archipelago"`
+
+Archipelago entries do not create one giant island. Instead, they deterministically place many smaller child islands inside the configured cluster radius.
+
+```json
+{
+  "type": "archipelago",
+  "name": "Outer Islands",
+  "x": -1800,
+  "z": 700,
+  "radius": 1100,
+  "count": 18,
+  "min_radius": 90,
+  "max_radius": 260,
+  "spread": 0.9,
+  "spacing": 1.2,
+  "min_stretch": 0.65,
+  "max_stretch": 1.6,
+  "min_shape_power": 1.2,
+  "max_shape_power": 3.8,
+  "roughness": 0.22,
+  "shore_width": 0.17,
+  "noise": {
+    "seed": "outer_islands"
+  }
+}
+```
+
+- `count` is the target number of child islands.
+- `min_radius` and `max_radius` control child island sizes.
+- `spread` controls how much of the cluster radius can be used.
+- `spacing` controls how strongly child islands try to avoid each other.
+- `min_stretch` and `max_stretch` randomize child island elongation.
+- `min_shape_power` and `max_shape_power` randomize child island base shapes.
+- If the requested count cannot fit with the chosen spacing, the mod logs a warning and uses the islands it could place.
 
 ## Coast Noise
 

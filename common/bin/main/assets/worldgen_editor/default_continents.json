@@ -2,65 +2,69 @@
   "enabled": true,
   "entries": [
     {
+      "type": "island",
       "name": "Spawn Island",
       "x": 0,
       "z": 0,
-      "radius": 850,
-      "roughness": 0.2,
+      "radius": 880,
+      "shape_power": 2.2,
+      "roughness": 0.18,
+      "shore_width": 0.18,
       "noise": {
         "seed": "spawn"
       }
     },
     {
-      "name": "Northern Long Island",
-      "x": -1350,
-      "z": -950,
-      "radius": 520,
-      "stretch_x": 1.55,
-      "stretch_z": 0.78,
-      "rotation": -28,
-      "roughness": 0.16,
+      "type": "ocean",
+      "name": "Central Strait",
+      "x": 360,
+      "z": 80,
+      "radius_x": 230,
+      "radius_z": 980,
+      "rotation": 24,
+      "shape_power": 1.35,
+      "roughness": 0.18,
+      "shore_width": 0.22,
       "noise": {
-        "seed": "north_long"
+        "seed": "central_strait",
+        "scale": 3.4
       }
     },
     {
+      "type": "island",
       "name": "Eastern Highlands",
-      "x": 1420,
-      "z": -450,
-      "radius": 610,
-      "stretch_x": 1.05,
-      "stretch_z": 1.28,
+      "x": 1500,
+      "z": -430,
+      "radius": 620,
+      "stretch_x": 1.12,
+      "stretch_z": 1.32,
       "rotation": 18,
-      "roughness": 0.22,
+      "shape_power": 2.8,
+      "roughness": 0.2,
       "noise": {
         "seed": "east_highlands",
         "scale": 3.6
       }
     },
     {
-      "name": "Southern Small Island",
-      "x": 620,
-      "z": 1460,
-      "radius": 360,
-      "rotation": 8,
-      "roughness": 0.12,
+      "type": "archipelago",
+      "name": "Western Archipelago",
+      "x": -1700,
+      "z": 720,
+      "radius": 1100,
+      "count": 16,
+      "min_radius": 90,
+      "max_radius": 250,
+      "spread": 0.88,
+      "spacing": 1.15,
+      "min_stretch": 0.7,
+      "max_stretch": 1.65,
+      "min_shape_power": 1.2,
+      "max_shape_power": 3.7,
+      "roughness": 0.22,
+      "shore_width": 0.17,
       "noise": {
-        "seed": "south_small",
-        "amplitudes": [1.0, 0.6, 0.35]
-      }
-    },
-    {
-      "name": "Western Small Island",
-      "x": -1780,
-      "z": 840,
-      "radius_x": 470,
-      "radius_z": 330,
-      "rotation": 31,
-      "roughness": 0.24,
-      "noise": {
-        "seed": "west_small",
-        "scale": 3.9
+        "seed": "western_archipelago"
       }
     }
   ]
