@@ -256,17 +256,30 @@ public final class IslandWorldState {
     }
 
     public static Holder<Biome> landBiome(IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ) {
+        return landBiome(1.0D, source, delegate, blockX, blockZ);
+    }
+
+    public static Holder<Biome> landBiome(double islandMask, IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ) {
         if (source == null) {
+            Holder<Biome> coast = replaceOceanDelegateOnLand(islandMask, delegate);
+            if (coast != null) {
+                return coast;
+            }
             return delegate;
         }
 
         ClimateBand configured = configuredClimateBand(source);
+        Holder<Biome> coast = replaceOceanDelegateOnLand(islandMask, delegate);
+        if (coast != null && !isExcluded(coast, source)) {
+            return coast;
+        }
+
         if (configured == null) {
             if (!isExcluded(delegate, source)) {
                 return delegate;
             }
             configured = climateBand(null, delegate, blockX, blockZ);
-        } else if (delegate != null && !isExcluded(delegate, source) && matchesLandClimate(delegate, configured)) {
+        } else if (delegate != null && !isExcluded(delegate, source) && !isOceanBiome(delegate) && matchesLandClimate(delegate, configured)) {
             return delegate;
         }
 
@@ -286,6 +299,16 @@ public final class IslandWorldState {
             case WARM -> firstNonNull(savannaBiome, jungleBiome, desertBiome, plainsBiome, delegate);
             case TEMPERATE -> firstNonNull(plainsBiome, forestBiome, meadowBiome, delegate);
         };
+    }
+
+    private static Holder<Biome> replaceOceanDelegateOnLand(double islandMask, Holder<Biome> delegate) {
+        if (!isOceanBiome(delegate)) {
+            return null;
+        }
+        if (islandMask < IslandTerrainHooks.LAND_MASK) {
+            return firstNonNull(beachBiome, plainsBiome, forestBiome, meadowBiome);
+        }
+        return firstNonNull(plainsBiome, forestBiome, meadowBiome);
     }
 
     public static boolean isOceanBiome(Holder<Biome> biome) {
@@ -328,9 +351,35 @@ public final class IslandWorldState {
         }
 
         int patchSize = biomePatchSize(source);
-        long mixed = mix(source == null ? worldSeed : source.climateSeed(), Math.floorDiv(blockX, patchSize) * 341873128712L);
-        mixed = mix(mixed, Math.floorDiv(blockZ, patchSize) * 132897987541L);
-        return allowed.get(Math.floorMod((int) (mixed >>> 32), allowed.size()));
+        long seed = source == null ? worldSeed : source.climateSeed();
+        int cellX = Math.floorDiv(blockX, patchSize);
+        int cellZ = Math.floorDiv(blockZ, patchSize);
+        double localX = (double) Math.floorMod(blockX, patchSize) / patchSize;
+        double localZ = (double) Math.floorMod(blockZ, patchSize) / patchSize;
+        double bestDistance = Double.POSITIVE_INFINITY;
+        int bestIndex = 0;
+
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int candidateCellX = cellX + dx;
+                int candidateCellZ = cellZ + dz;
+                long mixed = mix(seed, candidateCellX * 341873128712L);
+                mixed = mix(mixed, candidateCellZ * 132897987541L);
+                double jitterX = randomUnit(mixed, 1L);
+                double jitterZ = randomUnit(mixed, 2L);
+                double siteX = dx + jitterX;
+                double siteZ = dz + jitterZ;
+                double distanceX = localX - siteX;
+                double distanceZ = localZ - siteZ;
+                double distance = distanceX * distanceX + distanceZ * distanceZ;
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestIndex = Math.floorMod((int) (mix(mixed, 3L) >>> 32), allowed.size());
+                }
+            }
+        }
+
+        return allowed.get(bestIndex);
     }
 
     private static Holder<Biome> firstAllowed(List<Holder<Biome>> candidates, IslandMask.SourceInfo source, Holder<Biome> fallback) {
@@ -611,5 +660,10 @@ public final class IslandWorldState {
         mixed *= 0xc4ceb9fe1a85ec53L;
         mixed ^= mixed >>> 33;
         return mixed;
+    }
+
+    private static double randomUnit(long seed, long salt) {
+        long mixed = mix(seed, salt * 0x9e3779b97f4a7c15L);
+        return (mixed >>> 11) * 0x1.0p-53D;
     }
 }

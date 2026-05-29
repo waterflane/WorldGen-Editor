@@ -51,9 +51,9 @@ On Linux or macOS:
 The production jars are created here:
 
 ```text
-fabric/build/libs/worldgen-editor-fabric-0.1.0 beta.jar
-forge/build/libs/worldgen-editor-forge-0.1.0 beta.jar
-neoforge/build/libs/worldgen-editor-neoforge-0.1.0 beta.jar
+fabric/build/libs/worldgen-editor-fabric-0.2 beta.jar
+forge/build/libs/worldgen-editor-forge-0.2 beta.jar
+neoforge/build/libs/worldgen-editor-neoforge-0.2 beta.jar
 ```
 
 For convenience, the root `build` task also copies the three loader-ready jars into:
