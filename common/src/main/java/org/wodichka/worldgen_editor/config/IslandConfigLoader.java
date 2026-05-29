@@ -36,6 +36,9 @@ public final class IslandConfigLoader {
     private static final double DEFAULT_ARCHIPELAGO_MAX_STRETCH = 1.6D;
     private static final double DEFAULT_ARCHIPELAGO_MIN_SHAPE_POWER = 1.2D;
     private static final double DEFAULT_ARCHIPELAGO_MAX_SHAPE_POWER = 3.8D;
+    private static final int DEFAULT_BIOME_PATCH_SIZE = 512;
+    private static final int MIN_BIOME_PATCH_SIZE = 4;
+    private static final int MAX_BIOME_PATCH_SIZE = 4096;
 
     private IslandConfigLoader() {
     }
@@ -75,6 +78,10 @@ public final class IslandConfigLoader {
     static IslandConfig parse(JsonElement root) throws IslandConfigException {
         JsonObject object = requireObject(root, "root");
         boolean enabled = optionalBoolean(object, "enabled", false, "root");
+        String outerOcean = optionalString(object, "outer_ocean", IslandConfig.DEFAULT_OUTER_OCEAN, "root");
+        if (!isValidBiomeId(outerOcean)) {
+            throw new IslandConfigException("root.outer_ocean must be a biome id like minecraft:deep_ocean");
+        }
         JsonArray entries = requireArray(object, "entries", "root");
         List<IslandEntry> parsedEntries = new ArrayList<>();
 
@@ -138,6 +145,9 @@ public final class IslandConfigLoader {
                     type,
                     name,
                     optionalBoolean(entry, "overlap", false, path),
+                    parseBiomeSelectors(optionalArray(entry, "exclude_biomes", path), path + ".exclude_biomes"),
+                    parseTemperature(optionalString(entry, firstPresent(entry, "temperature", "climate"), "standard", path), path),
+                    optionalRangeInt(entry, path, DEFAULT_BIOME_PATCH_SIZE, MIN_BIOME_PATCH_SIZE, MAX_BIOME_PATCH_SIZE, "biome_patch_size"),
                     new IslandNoise(
                             amplitudes,
                             noise == null ? name : optionalString(noise, "seed", name, path + ".noise"),
@@ -165,7 +175,60 @@ public final class IslandConfigLoader {
             ));
         }
 
-        return new IslandConfig(enabled, parsedEntries);
+        return new IslandConfig(enabled, outerOcean, parsedEntries);
+    }
+
+    private static List<String> parseBiomeSelectors(JsonArray array, String path) throws IslandConfigException {
+        if (array == null) {
+            return List.of();
+        }
+
+        List<String> selectors = new ArrayList<>();
+        for (int index = 0; index < array.size(); index++) {
+            JsonElement element = array.get(index);
+            if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+                throw new IslandConfigException(path + "[" + index + "] must be a string");
+            }
+
+            String selector = element.getAsString();
+            if (!isValidBiomeSelector(selector)) {
+                throw new IslandConfigException(path + "[" + index + "] must be a biome id or tag like minecraft:plains or #minecraft:is_ocean");
+            }
+            selectors.add(selector);
+        }
+        return selectors;
+    }
+
+    private static boolean isValidBiomeSelector(String selector) {
+        String id = selector.startsWith("#") ? selector.substring(1) : selector;
+        return isValidBiomeId(id);
+    }
+
+    private static boolean isValidBiomeId(String id) {
+        if (id.isEmpty()) {
+            return false;
+        }
+        int separator = id.indexOf(':');
+        if (separator <= 0 || separator == id.length() - 1 || id.indexOf(':', separator + 1) >= 0) {
+            return false;
+        }
+        return isValidResourcePart(id.substring(0, separator), false) && isValidResourcePart(id.substring(separator + 1), true);
+    }
+
+    private static boolean isValidResourcePart(String value, boolean path) {
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            boolean valid = character >= 'a' && character <= 'z'
+                    || character >= '0' && character <= '9'
+                    || character == '_'
+                    || character == '-'
+                    || character == '.'
+                    || path && character == '/';
+            if (!valid) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static IslandEntryType parseEntryType(String value, String path) throws IslandConfigException {
@@ -174,6 +237,16 @@ public final class IslandConfigLoader {
             case "ocean" -> IslandEntryType.OCEAN;
             case "archipelago" -> IslandEntryType.ARCHIPELAGO;
             default -> throw new IslandConfigException(path + ".type must be one of island, ocean, archipelago");
+        };
+    }
+
+    private static IslandTemperature parseTemperature(String value, String path) throws IslandConfigException {
+        return switch (value.toLowerCase()) {
+            case "standard", "standart", "vanilla", "auto" -> IslandTemperature.STANDARD;
+            case "cold" -> IslandTemperature.COLD;
+            case "temperate", "normal" -> IslandTemperature.TEMPERATE;
+            case "warm", "hot" -> IslandTemperature.WARM;
+            default -> throw new IslandConfigException(path + ".temperature must be one of standard, cold, temperate, warm");
         };
     }
 
@@ -218,6 +291,18 @@ public final class IslandConfigLoader {
             throw new IslandConfigException(path + "." + key + " must be an object");
         }
         return value.getAsJsonObject();
+    }
+
+    private static JsonArray optionalArray(JsonObject object, String key, String path) throws IslandConfigException {
+        if (!has(object, key)) {
+            return null;
+        }
+
+        JsonElement value = object.get(key);
+        if (!value.isJsonArray()) {
+            throw new IslandConfigException(path + "." + key + " must be an array");
+        }
+        return value.getAsJsonArray();
     }
 
     private static JsonArray requireArray(JsonObject object, String key, String path) throws IslandConfigException {
@@ -301,6 +386,19 @@ public final class IslandConfigLoader {
         return fallback;
     }
 
+    private static int optionalRangeInt(JsonObject object, String path, int fallback, int min, int max, String... keys) throws IslandConfigException {
+        for (String key : keys) {
+            if (has(object, key)) {
+                int value = requireInt(object, key, path);
+                if (value < min || value > max) {
+                    throw new IslandConfigException(path + "." + key + " must be between " + min + " and " + max);
+                }
+                return value;
+            }
+        }
+        return fallback;
+    }
+
     private static double requirePositiveDouble(JsonObject object, String key, String path) throws IslandConfigException {
         double value = requireDouble(object, key, path);
         if (value <= 0.0D) {
@@ -372,5 +470,9 @@ public final class IslandConfigLoader {
     private static boolean has(JsonObject object, String key) {
         JsonElement value = object.get(key);
         return value != null && !value.isJsonNull();
+    }
+
+    private static String firstPresent(JsonObject object, String primary, String secondary) {
+        return has(object, primary) ? primary : secondary;
     }
 }

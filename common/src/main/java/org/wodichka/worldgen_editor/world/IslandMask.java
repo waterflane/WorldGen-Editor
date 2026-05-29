@@ -7,6 +7,7 @@ import org.wodichka.worldgen_editor.config.IslandConfig;
 import org.wodichka.worldgen_editor.config.IslandEntry;
 import org.wodichka.worldgen_editor.config.IslandEntryType;
 import org.wodichka.worldgen_editor.config.IslandNoise;
+import org.wodichka.worldgen_editor.config.IslandTemperature;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,30 +18,40 @@ public final class IslandMask {
 
     private final List<CompiledIsland> landShapes;
     private final List<CompiledIsland> oceanShapes;
+    private final List<CompiledParent> archipelagoParents;
 
     public IslandMask(IslandConfig config, long worldSeed) {
         List<CompiledIsland> land = new ArrayList<>();
         List<CompiledIsland> ocean = new ArrayList<>();
+        List<CompiledParent> parents = new ArrayList<>();
         for (IslandEntry entry : config.entries()) {
             if (entry.type() == IslandEntryType.OCEAN) {
-                ocean.add(new CompiledIsland(entry, worldSeed));
+                ocean.add(new CompiledIsland(entry, sourceInfo(entry, worldSeed, null), worldSeed));
             } else if (entry.type() == IslandEntryType.ARCHIPELAGO) {
-                compileArchipelago(entry, worldSeed, land);
+                parents.add(new CompiledParent(entry, sourceInfo(entry, 0L, entry.name())));
+                compileArchipelago(entry, land);
             } else {
-                land.add(new CompiledIsland(entry, worldSeed));
+                land.add(new CompiledIsland(entry, sourceInfo(entry, worldSeed, null), worldSeed));
             }
         }
         this.landShapes = List.copyOf(land);
         this.oceanShapes = List.copyOf(ocean);
+        this.archipelagoParents = List.copyOf(parents);
     }
 
     public boolean isEmpty() {
-        return landShapes.isEmpty() && oceanShapes.isEmpty();
+        return landShapes.isEmpty() && oceanShapes.isEmpty() && archipelagoParents.isEmpty();
     }
 
     public double sample(double blockX, double blockZ) {
+        return sampleInfo(blockX, blockZ).value();
+    }
+
+    public SampleInfo sampleInfo(double blockX, double blockZ) {
         double union = 0.0D;
         double additive = 0.0D;
+        double strongestLand = 0.0D;
+        SourceInfo landSource = null;
 
         for (CompiledIsland island : landShapes) {
             double value = island.sample(blockX, blockZ);
@@ -49,19 +60,49 @@ public final class IslandMask {
             } else {
                 union = Math.max(union, value);
             }
+            if (value > strongestLand) {
+                strongestLand = value;
+                landSource = island.sourceInfo;
+            }
         }
 
         double land = clamp01(Math.max(union, additive));
         double ocean = 0.0D;
+        SourceInfo oceanSource = null;
         for (CompiledIsland oceanShape : oceanShapes) {
-            ocean = Math.max(ocean, oceanShape.sample(blockX, blockZ));
+            double value = oceanShape.sample(blockX, blockZ);
+            if (value > ocean) {
+                ocean = value;
+                oceanSource = oceanShape.sourceInfo;
+            }
         }
 
-        return clamp01(Math.min(land, 1.0D - ocean));
+        double parentValue = 0.0D;
+        SourceInfo parentSource = null;
+        for (CompiledParent parent : archipelagoParents) {
+            double value = parent.sample(blockX, blockZ);
+            if (value > parentValue) {
+                parentValue = value;
+                parentSource = parent.sourceInfo;
+            }
+        }
+
+        return new SampleInfo(clamp01(Math.min(land, 1.0D - ocean)), landSource, oceanSource, parentSource);
     }
 
-    private static void compileArchipelago(IslandEntry entry, long worldSeed, List<CompiledIsland> land) {
-        long baseSeed = mix(worldSeed, stableStringSeed(entry.noise().seed()));
+    public record SourceInfo(String name, IslandEntryType type, String parentName, long climateSeed, List<String> excludedBiomes,
+                             IslandTemperature temperature, int biomePatchSize) {
+        public SourceInfo {
+            excludedBiomes = List.copyOf(excludedBiomes);
+        }
+    }
+
+    public record SampleInfo(double value, SourceInfo landSource, SourceInfo oceanSource, SourceInfo archipelagoSource) {
+    }
+
+    private static void compileArchipelago(IslandEntry entry, List<CompiledIsland> land) {
+        long baseSeed = stableStringSeed(entry.noise().seed());
+        SourceInfo sourceInfo = sourceInfo(entry, 0L, entry.name());
         List<PlacedChild> placed = new ArrayList<>();
 
         for (int index = 0; index < entry.count(); index++) {
@@ -96,6 +137,7 @@ public final class IslandMask {
                     );
                     land.add(new CompiledIsland(
                             entry.overlap(),
+                            sourceInfo,
                             centerX,
                             centerZ,
                             radiusX,
@@ -106,7 +148,7 @@ public final class IslandMask {
                             entry.noiseStrength(),
                             entry.edgeWidth(),
                             childNoise,
-                            worldSeed
+                            0L
                     ));
                     placed.add(new PlacedChild(centerX, centerZ, approximateRadius));
                     accepted = true;
@@ -119,6 +161,18 @@ public final class IslandMask {
                 return;
             }
         }
+    }
+
+    private static SourceInfo sourceInfo(IslandEntry entry, long worldSeed, String parentName) {
+        return new SourceInfo(
+                entry.name(),
+                entry.type(),
+                parentName,
+                mix(worldSeed, stableStringSeed(entry.noise().seed())),
+                entry.excludedBiomes(),
+                entry.temperature(),
+                entry.biomePatchSize()
+        );
     }
 
     private static boolean hasSpacingConflict(List<PlacedChild> placed, double centerX, double centerZ, double radius, double spacing) {
@@ -146,8 +200,45 @@ public final class IslandMask {
     private record PlacedChild(double centerX, double centerZ, double radius) {
     }
 
+    private static final class CompiledParent {
+        private final SourceInfo sourceInfo;
+        private final double centerX;
+        private final double centerZ;
+        private final double xDivisor;
+        private final double zDivisor;
+        private final double cos;
+        private final double sin;
+        private final double shapePower;
+        private final double edgeWidth;
+
+        private CompiledParent(IslandEntry entry, SourceInfo sourceInfo) {
+            this.sourceInfo = sourceInfo;
+            this.centerX = entry.centerX();
+            this.centerZ = entry.centerZ();
+            this.xDivisor = entry.xDivisor();
+            this.zDivisor = entry.zDivisor();
+            double radians = Math.toRadians(entry.rotationDegrees());
+            this.cos = Math.cos(radians);
+            this.sin = Math.sin(radians);
+            this.shapePower = entry.shapePower();
+            this.edgeWidth = entry.edgeWidth();
+        }
+
+        private double sample(double blockX, double blockZ) {
+            double dx = blockX - centerX;
+            double dz = blockZ - centerZ;
+            double rotatedX = dx * cos - dz * sin;
+            double rotatedZ = dx * sin + dz * cos;
+            double normalizedX = rotatedX / xDivisor;
+            double normalizedZ = rotatedZ / zDivisor;
+            double field = 1.0D - superellipseDistance(normalizedX, normalizedZ, shapePower);
+            return smoothstep(-edgeWidth, edgeWidth, field);
+        }
+    }
+
     private static final class CompiledIsland {
         private final boolean overlap;
+        private final SourceInfo sourceInfo;
         private final double centerX;
         private final double centerZ;
         private final double xDivisor;
@@ -161,9 +252,10 @@ public final class IslandMask {
         private final IslandNoise noise;
         private final long seed;
 
-        private CompiledIsland(IslandEntry entry, long worldSeed) {
+        private CompiledIsland(IslandEntry entry, SourceInfo sourceInfo, long worldSeed) {
             this(
                     entry.overlap(),
+                    sourceInfo,
                     entry.centerX(),
                     entry.centerZ(),
                     entry.xDivisor(),
@@ -180,6 +272,7 @@ public final class IslandMask {
 
         private CompiledIsland(
                 boolean overlap,
+                SourceInfo sourceInfo,
                 double centerX,
                 double centerZ,
                 double xDivisor,
@@ -193,6 +286,7 @@ public final class IslandMask {
                 long worldSeed
         ) {
             this.overlap = overlap;
+            this.sourceInfo = sourceInfo;
             this.centerX = centerX;
             this.centerZ = centerZ;
             this.xDivisor = xDivisor;
@@ -282,6 +376,11 @@ public final class IslandMask {
 
     private static double superellipseDistance(double x, double z, double power) {
         return Math.pow(Math.pow(Math.abs(x), power) + Math.pow(Math.abs(z), power), 1.0D / power);
+    }
+
+    private static double smoothstep(double min, double max, double value) {
+        double x = clamp01((value - min) / (max - min));
+        return x * x * (3.0D - 2.0D * x);
     }
 
     private static double lerp(double start, double end, double delta) {

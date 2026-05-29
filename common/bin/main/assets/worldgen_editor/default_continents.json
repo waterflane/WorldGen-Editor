@@ -1,5 +1,6 @@
 {
   "enabled": true,
+  "outer_ocean": "minecraft:deep_ocean",
   "entries": [
     {
       "type": "island",
@@ -10,6 +11,12 @@
       "shape_power": 2.2,
       "roughness": 0.18,
       "shore_width": 0.18,
+      "temperature": "temperate",
+      "biome_patch_size": 768,
+      "exclude_biomes": [
+        "minecraft:desert",
+        "minecraft:savanna"
+      ],
       "noise": {
         "seed": "spawn"
       }
@@ -25,6 +32,8 @@
       "shape_power": 1.35,
       "roughness": 0.18,
       "shore_width": 0.22,
+      "temperature": "standard",
+      "biome_patch_size": 1024,
       "noise": {
         "seed": "central_strait",
         "scale": 3.4
@@ -63,6 +72,11 @@
       "max_shape_power": 3.7,
       "roughness": 0.22,
       "shore_width": 0.17,
+      "temperature": "warm",
+      "biome_patch_size": 1024,
+      "exclude_biomes": [
+        "#minecraft:is_badlands"
+      ],
       "noise": {
         "seed": "western_archipelago"
       }

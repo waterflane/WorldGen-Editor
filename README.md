@@ -15,6 +15,8 @@ The project is built with Architectury Loom and targets:
 - Configurable islands from `config/worldgen_editor/continents.json`.
 - Simple island fields such as `x`, `z`, `radius`, `rotation`, `shape_power`, `roughness`, and `shore_width`.
 - JSON entry types for normal islands, ocean-carved cuts, and generated archipelagos.
+- Per-entry biome exclusions with `exclude_biomes`, including biome ids and tags.
+- Climate-aware ocean and land fallback biome selection.
 - Backward-compatible support for older field names such as `center_x`, `center_z`, `x_divisor`, and `z_divisor`.
 - Built-in world preset: `WorldGen Editor: Islands`.
 - Runtime commands for reload and per-world enable state.

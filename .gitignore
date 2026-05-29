@@ -27,3 +27,5 @@ saves/
 !gradle/wrapper/gradle-wrapper.jar
 
 MODRINTH_DESCRIPTION.md
+WIKI_DRAFT.md
+JSON_GUIDE.md

@@ -68,14 +68,25 @@ public final class IslandBiomeSource extends BiomeSource {
 
         int blockX = QuartPos.toBlock(quartX);
         int blockZ = QuartPos.toBlock(quartZ);
-        double island = mask.sample(blockX, blockZ);
-        if (island < IslandTerrainHooks.BEACH_START_MASK) {
-            Holder<Biome> ocean = IslandWorldState.oceanBiome(island);
+        IslandMask.SampleInfo sample = mask.sampleInfo(blockX, blockZ);
+        Holder<Biome> delegateBiome = delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+        if (sample.value() < IslandTerrainHooks.BEACH_START_MASK) {
+            if (sample.oceanSource() == null && sample.archipelagoSource() == null && sample.landSource() == null) {
+                Holder<Biome> outerOcean = IslandWorldState.outerOceanBiome();
+                if (outerOcean != null) {
+                    return outerOcean;
+                }
+            }
+            IslandMask.SourceInfo source = sample.oceanSource() != null
+                    ? sample.oceanSource()
+                    : sample.archipelagoSource() != null ? sample.archipelagoSource() : sample.landSource();
+            Holder<Biome> ocean = IslandWorldState.oceanBiome(sample.value(), source, delegateBiome, blockX, blockZ);
             if (ocean != null) {
                 return ocean;
             }
         }
 
-        return delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+        IslandMask.SourceInfo source = sample.landSource() != null ? sample.landSource() : sample.archipelagoSource();
+        return IslandWorldState.landBiome(source, delegateBiome, blockX, blockZ);
     }
 }

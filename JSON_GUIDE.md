@@ -46,12 +46,14 @@ The normal config has a top-level flag:
 ```json
 {
   "enabled": true,
+  "outer_ocean": "minecraft:deep_ocean",
   "entries": []
 }
 ```
 
 - `enabled: false` means the island mask is not applied, even when the island world preset is selected.
 - `enabled: true` allows island generation in worlds where the per-world flag is also enabled.
+- `outer_ocean` is optional. It controls the biome used outside every island/archipelago mask. If omitted, the mod uses `minecraft:deep_ocean`. If the configured biome is missing or not ocean-like, the mod logs a warning and falls back to `minecraft:deep_ocean`.
 
 For each world, the mod stores an extra file:
 
@@ -89,6 +91,7 @@ At minimum, an island needs a center and a radius:
 ```json
 {
   "enabled": true,
+  "outer_ocean": "minecraft:deep_ocean",
   "entries": [
     {
       "x": 0,
@@ -116,6 +119,8 @@ This creates one roughly round island around coordinates `0, 0`.
       "shape_power": 2.2,
       "roughness": 0.16,
       "shore_width": 0.18,
+      "temperature": "temperate",
+      "biome_patch_size": 768,
       "noise": {
         "seed": "spawn"
       }
@@ -131,6 +136,8 @@ This creates one roughly round island around coordinates `0, 0`.
       "shape_power": 1.35,
       "roughness": 0.18,
       "shore_width": 0.22,
+      "temperature": "standard",
+      "biome_patch_size": 1024,
       "noise": {
         "seed": "central_strait"
       }
@@ -152,6 +159,8 @@ This creates one roughly round island around coordinates `0, 0`.
       "max_shape_power": 3.7,
       "roughness": 0.22,
       "shore_width": 0.17,
+      "temperature": "warm",
+      "biome_patch_size": 1024,
       "noise": {
         "seed": "western_archipelago"
       }
@@ -188,6 +197,9 @@ This creates one roughly round island around coordinates `0, 0`.
 - `roughness` controls coastline noise strength from `0.0` to `1.0`.
 - `shore_width` controls the soft transition width between land and ocean.
 - `overlap` controls whether this island can add its mask on top of other islands.
+- `temperature` controls climate-biome selection for this entry. Supported values are `standard`, `cold`, `temperate`, and `warm`. The aliases `auto`, `vanilla`, `standart`, and the old field name `climate` also work.
+- `biome_patch_size` controls how large fallback-biome patches are, in blocks. Default is `512`. Smaller values create visible biome mosaic patches; larger values make islands and archipelagos more consistent.
+- `exclude_biomes` prevents specific vanilla/modded biomes from being selected for this entry. Use biome ids like `minecraft:desert` or tags like `#minecraft:is_badlands`.
 
 Most of the time, you only need `type`, `x`, `z`, `radius`, `stretch_x`, `stretch_z`, `rotation`, `shape_power`, and `roughness`.
 
@@ -266,6 +278,86 @@ Archipelago entries do not create one giant island. Instead, they deterministica
 - `min_stretch` and `max_stretch` randomize child island elongation.
 - `min_shape_power` and `max_shape_power` randomize child island base shapes.
 - If the requested count cannot fit with the chosen spacing, the mod logs a warning and uses the islands it could place.
+- Child island placement, size, stretch, rotation, shape, and coastline noise depend only on this entry's `noise.seed`. Changing the Minecraft world seed no longer moves the individual archipelago islands.
+
+## Biome Exclusions
+
+Biome selection is automatic. The mod keeps vanilla land biomes when they are allowed, picks climate-aware ocean variants for ocean zones, and uses safe fallback land biomes when a chosen biome is excluded.
+
+You can override the automatic climate per entry with `temperature`:
+
+```json
+{
+  "type": "archipelago",
+  "name": "Warm Islands",
+  "x": -1200,
+  "z": 400,
+  "radius": 900,
+  "temperature": "warm"
+}
+```
+
+Supported values:
+
+- `standard` follows Minecraft's own delegate biome choice as much as possible. This is the default when `temperature` is omitted and it does not filter climates.
+- `cold` allows only cold land/ocean fallbacks, such as snowy plains, taiga, frozen ocean, and cold ocean variants.
+- `temperate` allows moderate land/ocean fallbacks, such as plains, forests, meadow, normal ocean, and deep ocean. It avoids desert, savanna, jungle, snowy, and frozen fallbacks.
+- `warm` allows warm land fallbacks, such as savanna, jungle, and desert. For oceans it allows warm/lukewarm/normal non-cold ocean variants and blocks cold/frozen/deep-cold oceans.
+
+`temperature` affects only biome selection performed by WorldGen Editor. With `standard`, vanilla/modded delegate biomes are preserved unless excluded. With `warm`, `cold`, or `temperate`, an incompatible delegate biome is replaced with a matching fallback. Unknown modded biomes are kept under `standard`; under manual temperatures they are replaced unless their tags clearly match the requested climate.
+
+Compatibility aliases:
+
+- `auto` = `standard`
+- `vanilla` = `standard`
+- `standart` = `standard`
+- `climate` can be used as an old field name instead of `temperature`
+
+Use `biome_patch_size` to control how patchy replacement biomes are:
+
+```json
+{
+  "type": "archipelago",
+  "name": "Large Biome Zones",
+  "x": -1800,
+  "z": 700,
+  "radius": 1100,
+  "biome_patch_size": 1024
+}
+```
+
+Tuning:
+
+- `32` to `128` creates small, visible biome patches.
+- `256` to `512` is a balanced range.
+- `1024` to `2048` makes archipelagos feel more unified.
+- Valid range is `4` to `4096`.
+
+This is useful for archipelagos: small patches can look varied, but large patches are usually better when you want one island chain to feel like a single climate region.
+
+Use `exclude_biomes` on any entry:
+
+```json
+{
+  "type": "island",
+  "name": "No Deserts",
+  "x": 0,
+  "z": 0,
+  "radius": 850,
+  "exclude_biomes": [
+    "minecraft:desert",
+    "minecraft:savanna",
+    "#minecraft:is_badlands"
+  ]
+}
+```
+
+Notes:
+
+- Exact ids exclude one biome.
+- Tags exclude every biome in that tag.
+- Archipelago children inherit exclusions from their parent archipelago entry.
+- If every preferred fallback is excluded, the mod logs a warning and uses a safe vanilla fallback.
 
 ## Coast Noise
 
