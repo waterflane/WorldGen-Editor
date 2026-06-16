@@ -1,3 +1,5 @@
 {
-  "generator.worldgen_editor.islands": "WorldGen Editor: Islands"
+  "generator.worldgen_editor.islands": "WorldGen Editor: Islands",
+  "generator.worldgen_editor.archipelago": "WorldGen Editor: Archipelago",
+  "generator.worldgen_editor.small_island": "WorldGen Editor: Small Island"
 }

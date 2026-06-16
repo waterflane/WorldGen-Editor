@@ -18,8 +18,14 @@ import java.util.List;
 
 public final class IslandConfigLoader {
     public static final Path CONFIG_PATH = Path.of("config", Worldgen_editor.MOD_ID, "continents.json");
+    public static final Path MAIN_CONFIG_PATH = Path.of("config", Worldgen_editor.MOD_ID, "worldgen_editor.json");
+    public static final Path PRESETS_DIR = Path.of("config", Worldgen_editor.MOD_ID, "presets");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final String LEGACY_DEFAULT_RESOURCE = "/assets/worldgen_editor/default_continents.json";
+    private static final String MAIN_DEFAULT_RESOURCE = "/assets/worldgen_editor/default_worldgen_editor.json";
+    private static final String PRESET_RESOURCE_ROOT = "/assets/worldgen_editor/presets/";
+    private static final List<String> DEFAULT_PRESETS = List.of("default", "archipelago", "small_island");
     private static final List<Double> DEFAULT_AMPLITUDES = List.of(1.0D, 0.78D, 0.55D, 0.34D);
     private static final double DEFAULT_NOISE_SCALE = 3.2D;
     private static final int DEFAULT_FIRST_OCTAVE = -1;
@@ -44,11 +50,47 @@ public final class IslandConfigLoader {
     }
 
     public static IslandConfig loadOrCreate() throws IslandConfigException {
+        return loadOrCreate(null);
+    }
+
+    public static IslandConfig loadOrCreate(String presetOverride) throws IslandConfigException {
         try {
             ensureDefaultExists();
+            if (presetOverride != null && !presetOverride.isBlank()) {
+                WorldgenEditorConfig mainConfig = Files.exists(MAIN_CONFIG_PATH)
+                        ? loadMainConfig(MAIN_CONFIG_PATH)
+                        : WorldgenEditorConfig.DEFAULT;
+                IslandConfig preset = load(presetPath(presetOverride));
+                return new IslandConfig(mainConfig.enabled(), preset.outerOcean(), preset.entries());
+            } else if (Files.exists(MAIN_CONFIG_PATH)) {
+                WorldgenEditorConfig mainConfig = loadMainConfig(MAIN_CONFIG_PATH);
+                Path presetPath = presetPath(mainConfig.activePreset());
+                IslandConfig preset = load(presetPath);
+                return new IslandConfig(mainConfig.enabled(), preset.outerOcean(), preset.entries());
+            }
             return load(CONFIG_PATH);
         } catch (IOException exception) {
-            throw new IslandConfigException("Could not read island config at " + CONFIG_PATH, exception);
+            throw new IslandConfigException("Could not read island config: " + exception.getMessage(), exception);
+        }
+    }
+
+    public static void setActivePreset(String presetName) throws IOException, IslandConfigException {
+        validatePresetName(presetName, "preset");
+        Path presetPath = presetPath(presetName);
+        if (!Files.exists(presetPath)) {
+            throw new IslandConfigException("Preset does not exist: " + presetPath);
+        }
+
+        WorldgenEditorConfig current = Files.exists(MAIN_CONFIG_PATH)
+                ? loadMainConfig(MAIN_CONFIG_PATH)
+                : WorldgenEditorConfig.DEFAULT;
+        WorldgenEditorConfig updated = new WorldgenEditorConfig(current.enabled(), presetName);
+        Files.createDirectories(MAIN_CONFIG_PATH.getParent());
+        JsonObject object = new JsonObject();
+        object.addProperty("enabled", updated.enabled());
+        object.addProperty("active_preset", updated.activePreset());
+        try (java.io.Writer writer = Files.newBufferedWriter(MAIN_CONFIG_PATH)) {
+            GSON.toJson(object, writer);
         }
     }
 
@@ -61,17 +103,101 @@ public final class IslandConfigLoader {
         }
     }
 
+    public static Path activeConfigPath() {
+        return activeConfigPath(null);
+    }
+
+    public static Path activeConfigPath(String presetOverride) {
+        if (presetOverride != null && !presetOverride.isBlank()) {
+            try {
+                return presetPath(presetOverride);
+            } catch (IslandConfigException ignored) {
+                return MAIN_CONFIG_PATH;
+            }
+        }
+        if (Files.exists(MAIN_CONFIG_PATH)) {
+            try {
+                return presetPath(loadMainConfig(MAIN_CONFIG_PATH).activePreset());
+            } catch (IslandConfigException | IOException ignored) {
+                return MAIN_CONFIG_PATH;
+            }
+        }
+        return CONFIG_PATH;
+    }
+
+    public static String activePresetName() {
+        return activePresetName(null);
+    }
+
+    public static String activePresetName(String presetOverride) {
+        if (presetOverride != null && !presetOverride.isBlank()) {
+            return presetOverride;
+        }
+        if (!Files.exists(MAIN_CONFIG_PATH)) {
+            return "legacy:continents";
+        }
+        try {
+            return loadMainConfig(MAIN_CONFIG_PATH).activePreset();
+        } catch (IslandConfigException | IOException ignored) {
+            return "invalid";
+        }
+    }
+
+    public static Path presetPath(String presetName) throws IslandConfigException {
+        validatePresetName(presetName, "active_preset");
+        return PRESETS_DIR.resolve(presetName + ".json");
+    }
+
     private static void ensureDefaultExists() throws IOException {
+        if (Files.exists(MAIN_CONFIG_PATH)) {
+            ensurePresetDefaults();
+            return;
+        }
+
         if (Files.exists(CONFIG_PATH)) {
             return;
         }
 
-        Files.createDirectories(CONFIG_PATH.getParent());
-        try (InputStream input = IslandConfigLoader.class.getResourceAsStream("/assets/worldgen_editor/default_continents.json")) {
+        Files.createDirectories(MAIN_CONFIG_PATH.getParent());
+        copyBundledResource(MAIN_DEFAULT_RESOURCE, MAIN_CONFIG_PATH);
+        ensurePresetDefaults();
+        copyBundledResource(LEGACY_DEFAULT_RESOURCE, CONFIG_PATH);
+    }
+
+    private static void ensurePresetDefaults() throws IOException {
+        Files.createDirectories(PRESETS_DIR);
+        for (String preset : DEFAULT_PRESETS) {
+            copyBundledResource(PRESET_RESOURCE_ROOT + preset + ".json", PRESETS_DIR.resolve(preset + ".json"));
+        }
+    }
+
+    private static void copyBundledResource(String resourcePath, Path target) throws IOException {
+        if (Files.exists(target)) {
+            return;
+        }
+        Files.createDirectories(target.getParent());
+        try (InputStream input = IslandConfigLoader.class.getResourceAsStream(resourcePath)) {
             if (input == null) {
-                throw new IOException("Bundled default_continents.json is missing");
+                throw new IOException("Bundled resource is missing: " + resourcePath);
             }
-            Files.copy(input, CONFIG_PATH);
+            Files.copy(input, target);
+        }
+    }
+
+    static WorldgenEditorConfig parseMainConfig(JsonElement root) throws IslandConfigException {
+        JsonObject object = requireObject(root, "root");
+        boolean enabled = optionalBoolean(object, "enabled", WorldgenEditorConfig.DEFAULT.enabled(), "root");
+        String activePreset = optionalString(object, "active_preset", WorldgenEditorConfig.DEFAULT_PRESET, "root");
+        validatePresetName(activePreset, "root.active_preset");
+        return new WorldgenEditorConfig(enabled, activePreset);
+    }
+
+    private static WorldgenEditorConfig loadMainConfig(Path path) throws IOException, IslandConfigException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            JsonElement root = GSON.fromJson(reader, JsonElement.class);
+            return parseMainConfig(root);
+        } catch (JsonParseException exception) {
+            throw new IslandConfigException("Invalid JSON in " + path + ": " + exception.getMessage(), exception);
         }
     }
 
@@ -202,6 +328,23 @@ public final class IslandConfigLoader {
     private static boolean isValidBiomeSelector(String selector) {
         String id = selector.startsWith("#") ? selector.substring(1) : selector;
         return isValidBiomeId(id);
+    }
+
+    private static void validatePresetName(String value, String path) throws IslandConfigException {
+        if (value == null || value.isBlank()) {
+            throw new IslandConfigException(path + " must not be empty");
+        }
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            boolean valid = character >= 'a' && character <= 'z'
+                    || character >= '0' && character <= '9'
+                    || character == '_'
+                    || character == '-'
+                    || character == '.';
+            if (!valid) {
+                throw new IslandConfigException(path + " may only contain lowercase letters, digits, '_', '-' and '.'");
+            }
+        }
     }
 
     private static boolean isValidBiomeId(String id) {

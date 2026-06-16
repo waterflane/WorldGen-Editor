@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "worldgen_editor:islands"
+    "worldgen_editor:islands",
+    "worldgen_editor:archipelago",
+    "worldgen_editor:small_island"
   ]
 }

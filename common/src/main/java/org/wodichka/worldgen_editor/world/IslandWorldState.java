@@ -42,6 +42,7 @@ public final class IslandWorldState {
     private static volatile long worldSeed;
     private static volatile boolean enabled;
     private static volatile boolean worldEnabled = true;
+    private static volatile String presetOverride;
     private static volatile Path worldStatePath;
     private static volatile Registry<Biome> biomeRegistry;
     private static volatile Holder<Biome> oceanBiome;
@@ -79,11 +80,11 @@ public final class IslandWorldState {
 
     private static void loadGlobalConfig(String phase, boolean keepPreviousOnFailure) {
         try {
-            IslandConfig config = IslandConfigLoader.loadOrCreate();
+            IslandConfig config = IslandConfigLoader.loadOrCreate(presetOverride);
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {} during {}", config.entries().size(), IslandConfigLoader.CONFIG_PATH, phase);
+            LOGGER.info("Loaded {} island entries from {} during {}", config.entries().size(), IslandConfigLoader.activeConfigPath(presetOverride), phase);
         } catch (IslandConfigException exception) {
             if (keepPreviousOnFailure) {
                 LOGGER.error("Keeping previous island config because {} load failed: {}", phase, exception.getMessage());
@@ -131,17 +132,32 @@ public final class IslandWorldState {
 
     public static boolean reloadConfig() {
         try {
-            IslandConfig config = IslandConfigLoader.loadOrCreate();
+            IslandConfig config = IslandConfigLoader.loadOrCreate(presetOverride);
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             refreshOuterOceanBiome();
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {} during reload", config.entries().size(), IslandConfigLoader.CONFIG_PATH);
+            LOGGER.info("Loaded {} island entries from {} during reload", config.entries().size(), IslandConfigLoader.activeConfigPath(presetOverride));
             return true;
         } catch (IslandConfigException exception) {
             LOGGER.error("Keeping previous island config because reload failed: {}", exception.getMessage());
             return false;
         }
+    }
+
+    public static void setPresetOverride(String presetName) {
+        if (presetName == null || presetName.isBlank()) {
+            return;
+        }
+        presetOverride = presetName;
+    }
+
+    public static String activePresetName() {
+        return IslandConfigLoader.activePresetName(presetOverride);
+    }
+
+    public static Path activeConfigPath() {
+        return IslandConfigLoader.activeConfigPath(presetOverride);
     }
 
     public static boolean setEnabled(boolean value) {
