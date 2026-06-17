@@ -1,6 +1,8 @@
 package org.wodichka.worldgen_editor.world;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.Registry;
@@ -15,16 +17,24 @@ import java.util.stream.Stream;
 
 public final class IslandBiomeSource extends BiomeSource {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(Worldgen_editor.MOD_ID, "island_biome_source");
-    public static final MapCodec<IslandBiomeSource> CODEC = BiomeSource.CODEC
-            .fieldOf("delegate")
-            .xmap(IslandBiomeSource::new, source -> source.delegate);
+    public static final String DEFAULT_PRESET = "default";
+    public static final MapCodec<IslandBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            BiomeSource.CODEC.fieldOf("delegate").forGetter(source -> source.delegate),
+            Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName)
+    ).apply(instance, IslandBiomeSource::new));
 
     private static boolean registered;
 
     private final BiomeSource delegate;
+    private final String presetName;
 
-    private IslandBiomeSource(BiomeSource delegate) {
+    private IslandBiomeSource(BiomeSource delegate, String presetName) {
         this.delegate = delegate;
+        this.presetName = presetName;
+    }
+
+    public String presetName() {
+        return presetName;
     }
 
     public static void register() {
@@ -40,7 +50,7 @@ public final class IslandBiomeSource extends BiomeSource {
         if (delegate instanceof IslandBiomeSource) {
             return delegate;
         }
-        return new IslandBiomeSource(delegate);
+        return new IslandBiomeSource(delegate, DEFAULT_PRESET);
     }
 
     @Override

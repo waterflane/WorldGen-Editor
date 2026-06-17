@@ -1,0 +1,58 @@
+{
+  "outer_ocean": "minecraft:deep_ocean",
+  "entries": [
+    {
+      "type": "archipelago",
+      "name": "Spawn Archipelago",
+      "x": 0,
+      "z": 0,
+      "radius": 1450,
+      "count": 24,
+      "min_radius": 75,
+      "max_radius": 260,
+      "spread": 0.95,
+      "spacing": 1.08,
+      "min_stretch": 0.65,
+      "max_stretch": 1.75,
+      "min_shape_power": 1.2,
+      "max_shape_power": 3.8,
+      "roughness": 0.22,
+      "shore_width": 0.18,
+      "temperature": "standard",
+      "biome_patch_size": 768,
+      "noise": {
+        "seed": "spawn_archipelago"
+      }
+    },
+    {
+      "type": "island",
+      "name": "Northern Island",
+      "x": 1600,
+      "z": -1350,
+      "radius": 420,
+      "stretch_x": 1.4,
+      "stretch_z": 0.82,
+      "rotation": -28,
+      "shape_power": 2.3,
+      "roughness": 0.2,
+      "noise": {
+        "seed": "north_island"
+      }
+    },
+    {
+      "type": "island",
+      "name": "Southern Island",
+      "x": -1500,
+      "z": 1450,
+      "radius": 470,
+      "stretch_x": 0.9,
+      "stretch_z": 1.45,
+      "rotation": 18,
+      "shape_power": 2.6,
+      "roughness": 0.2,
+      "noise": {
+        "seed": "south_island"
+      }
+    }
+  ]
+}

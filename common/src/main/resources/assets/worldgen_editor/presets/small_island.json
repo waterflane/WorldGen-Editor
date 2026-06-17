@@ -1,0 +1,24 @@
+{
+  "outer_ocean": "minecraft:deep_ocean",
+  "entries": [
+    {
+      "type": "island",
+      "name": "Small Spawn Island",
+      "x": 0,
+      "z": 0,
+      "radius": 360,
+      "stretch_x": 1.08,
+      "stretch_z": 0.92,
+      "rotation": 12,
+      "shape_power": 2.1,
+      "roughness": 0.16,
+      "shore_width": 0.18,
+      "temperature": "standard",
+      "biome_patch_size": 512,
+      "noise": {
+        "seed": "small_spawn_island",
+        "scale": 3.0
+      }
+    }
+  ]
+}

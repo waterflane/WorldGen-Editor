@@ -1,0 +1,84 @@
+{
+  "outer_ocean": "minecraft:deep_ocean",
+  "entries": [
+    {
+      "type": "island",
+      "name": "Spawn Island",
+      "x": 0,
+      "z": 0,
+      "radius": 880,
+      "shape_power": 2.2,
+      "roughness": 0.18,
+      "shore_width": 0.18,
+      "temperature": "temperate",
+      "biome_patch_size": 768,
+      "exclude_biomes": [
+        "minecraft:desert",
+        "minecraft:savanna"
+      ],
+      "noise": {
+        "seed": "spawn"
+      }
+    },
+    {
+      "type": "ocean",
+      "name": "Central Strait",
+      "x": 360,
+      "z": 80,
+      "radius_x": 230,
+      "radius_z": 980,
+      "rotation": 24,
+      "shape_power": 1.35,
+      "roughness": 0.18,
+      "shore_width": 0.22,
+      "temperature": "standard",
+      "biome_patch_size": 1024,
+      "noise": {
+        "seed": "central_strait",
+        "scale": 3.4
+      }
+    },
+    {
+      "type": "island",
+      "name": "Eastern Highlands",
+      "x": 1500,
+      "z": -430,
+      "radius": 620,
+      "stretch_x": 1.12,
+      "stretch_z": 1.32,
+      "rotation": 18,
+      "shape_power": 2.8,
+      "roughness": 0.2,
+      "noise": {
+        "seed": "east_highlands",
+        "scale": 3.6
+      }
+    },
+    {
+      "type": "archipelago",
+      "name": "Western Archipelago",
+      "x": -1700,
+      "z": 720,
+      "radius": 1100,
+      "count": 16,
+      "min_radius": 90,
+      "max_radius": 250,
+      "spread": 0.88,
+      "spacing": 1.15,
+      "min_stretch": 0.7,
+      "max_stretch": 1.65,
+      "min_shape_power": 1.2,
+      "max_shape_power": 3.7,
+      "roughness": 0.22,
+      "shore_width": 0.17,
+      "temperature": "warm",
+      "biome_patch_size": 1024,
+      "exclude_biomes": [
+        "#minecraft:is_badlands"
+      ],
+      "noise": {
+        "seed": "western_archipelago"
+      }
+    }
+  ]
+}

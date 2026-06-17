@@ -3,8 +3,14 @@ package org.wodichka.worldgen_editor.config;
 import com.google.gson.JsonParser;
 import org.wodichka.worldgen_editor.world.IslandMask;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 public final class IslandConfigLoaderTest {
     public static void main(String[] args) throws Exception {
+        parsesMainPresetConfig();
+        bundledPresetsParse();
         parsesSimpleConfig();
         parsesValidConfig();
         parsesOuterOcean();
@@ -24,6 +30,37 @@ public final class IslandConfigLoaderTest {
         sampleInfoReportsSources();
         archipelagoMaskIsDeterministic();
         islandMaskIsDeterministic();
+    }
+
+    private static void parsesMainPresetConfig() throws Exception {
+        WorldgenEditorConfig config = IslandConfigLoader.parseMainConfig(JsonParser.parseString("""
+                {
+                  "enabled": true,
+                  "active_preset": "archipelago"
+                }"""));
+
+        assertTrue(config.enabled(), "main preset config enabled should parse");
+        assertTrue("archipelago".equals(config.activePreset()), "active_preset should parse");
+    }
+
+    private static void bundledPresetsParse() throws Exception {
+        assertBundledPresetParses("default");
+        assertBundledPresetParses("archipelago");
+        assertBundledPresetParses("small_island");
+    }
+
+    private static void assertBundledPresetParses(String name) throws Exception {
+        IslandConfig config = IslandConfigLoader.parse(readResource("/assets/worldgen_editor/presets/" + name + ".json"));
+        assertTrue(!config.entries().isEmpty(), "bundled preset " + name + " should contain entries");
+    }
+
+    private static com.google.gson.JsonElement readResource(String path) throws Exception {
+        try (InputStream input = IslandConfigLoaderTest.class.getResourceAsStream(path)) {
+            if (input == null) {
+                throw new AssertionError("Missing resource " + path);
+            }
+            return JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        }
     }
 
     private static void parsesSimpleConfig() throws Exception {

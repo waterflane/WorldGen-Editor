@@ -6,7 +6,7 @@
         "type": "minecraft:noise",
         "biome_source": {
           "type": "worldgen_editor:island_biome_source",
-          "preset": "default",
+          "preset": "archipelago",
           "delegate": {
             "type": "minecraft:multi_noise",
             "preset": "minecraft:overworld"

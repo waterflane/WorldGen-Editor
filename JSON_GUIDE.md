@@ -1,9 +1,9 @@
-# WorldGen Editor: `continents.json` Guide
+# WorldGen Editor JSON Guide
 
 The mod now works through a datapack-style world preset. For a new world, choose this world type:
 
 ```text
-WorldGen Editor: Islands
+WGE: Islands
 ```
 
 Inside this preset, Minecraft still uses the normal `minecraft:noise` generator, but with two modded worldgen resources:
@@ -18,18 +18,49 @@ This is much more stable than replacing generator internals after the vanilla ge
 Main config file:
 
 ```text
-config/worldgen_editor/continents.json
+config/worldgen_editor/worldgen_editor.json
 ```
 
-If the file does not exist, the mod creates a default archipelago example.
+It selects a preset:
 
-The file is read:
+```json
+{
+  "enabled": true,
+  "active_preset": "default"
+}
+```
+
+Preset files live here:
+
+```text
+config/worldgen_editor/presets/default.json
+config/worldgen_editor/presets/archipelago.json
+config/worldgen_editor/presets/small_island.json
+```
+
+Bundled presets and matching world types:
+
+- `WGE: Islands` / `default`: the current standard island set.
+- `WGE: Archipelago` / `archipelago`: several islands and an archipelago cluster.
+- `WGE: Small Island` / `small_island`: one small spawn island.
+
+If the files do not exist, the mod creates defaults. New installs use `worldgen_editor.json` and `presets/*.json`; `continents.json` is only a legacy fallback for old configs where the new main config is not present.
+
+Preset priority is:
+
+```text
+world type preset > config active_preset > legacy continents.json
+```
+
+For example, a world created with `WGE: Archipelago` uses `config/worldgen_editor/presets/archipelago.json` even if `worldgen_editor.json` says `"active_preset": "default"`. This keeps the Minecraft world type and the generated world stable. The config-selected preset is used when no WGE world type preset is stored.
+
+The selected preset is read:
 
 - once when the mod initializes, so a default file can be created early;
 - again when a world/server starts, before the island mask is rebuilt for that world's seed;
 - again when `/worldgen_editor reload` is used.
 
-This means you can edit `continents.json` from the main menu and then create a new world without restarting the game.
+This means you can edit `worldgen_editor.json` or a preset JSON from the main menu and then create a new world without restarting the game.
 
 After editing the config while a world is already running, use:
 
@@ -41,18 +72,28 @@ After editing the config while a world is already running, use:
 
 ## Enabling
 
-The normal config has a top-level flag:
+The main config has a top-level flag:
 
 ```json
 {
   "enabled": true,
-  "outer_ocean": "minecraft:deep_ocean",
-  "entries": []
+  "active_preset": "default"
 }
 ```
 
 - `enabled: false` means the island mask is not applied, even when the island world preset is selected.
 - `enabled: true` allows island generation in worlds where the per-world flag is also enabled.
+- `active_preset` chooses a fallback file from `config/worldgen_editor/presets/` when the world itself does not already store a WGE preset.
+
+Each preset file has the usual island fields:
+
+```json
+{
+  "outer_ocean": "minecraft:deep_ocean",
+  "entries": []
+}
+```
+
 - `outer_ocean` is optional. It controls the biome used outside every island/archipelago mask. If omitted, the mod uses `minecraft:deep_ocean`. If the configured biome is missing or not ocean-like, the mod logs a warning and falls back to `minecraft:deep_ocean`.
 
 For each world, the mod stores an extra file:
@@ -72,7 +113,7 @@ New world-state files are created as:
 Final logic:
 
 ```text
-generation enabled = continents.json enabled && worldgen_editor.json enabled
+generation enabled = config/worldgen_editor/worldgen_editor.json enabled && <world>/worldgen_editor/worldgen_editor.json enabled
 ```
 
 Commands:
@@ -81,7 +122,14 @@ Commands:
 /worldgen_editor enable
 /worldgen_editor disable
 /worldgen_editor status
+/worldgen_editor preset <name>
 /worldgen_editor reload
+```
+
+You can choose a preset in the world type screen when creating a world, or change the config fallback with:
+
+```text
+/worldgen_editor preset small_island
 ```
 
 ## Smallest Valid Island
@@ -482,7 +530,7 @@ The new format is shorter, but older datapack-style files should continue to wor
 
 ## Important Limits
 
-- Select the `WorldGen Editor: Islands` world preset when creating an island world.
+- Select the `WGE: Islands`, `WGE: Archipelago`, or `WGE: Small Island` world preset when creating an island world.
 - Changing the config after world creation does not rebuild old chunks.
 - For a completely clean result, create a new world or deliberately delete old region files.
 - Islands use vanilla land biomes inside the island mask. The mod does not manually draw rivers or swamps.
@@ -490,8 +538,8 @@ The new format is shorter, but older datapack-style files should continue to wor
 
 ## Common Issues
 
-- The island did not appear: check that the world preset is `WorldGen Editor: Islands`.
-- The world looks vanilla: check `enabled` in `continents.json` and `/worldgen_editor status`.
+- The island did not appear: check that the world preset is one of the `WGE: ...` presets and that `/worldgen_editor status` reports the expected `world_preset`.
+- The world looks vanilla: check `enabled` in `config/worldgen_editor/worldgen_editor.json` and `/worldgen_editor status`.
 - JSON changed but the nearby terrain did not: you are looking at already generated chunks.
 - Reload failed: check commas, quotes, and required fields `x`, `z`, and `radius`.
 - Shores are too sharp: lower `roughness` or increase `shore_width`.
