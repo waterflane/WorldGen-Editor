@@ -31,7 +31,10 @@ public final class IslandBiomeSource extends BiomeSource {
     private IslandBiomeSource(BiomeSource delegate, String presetName) {
         this.delegate = delegate;
         this.presetName = presetName;
-        IslandWorldState.setPresetOverride(presetName);
+    }
+
+    public String presetName() {
+        return presetName;
     }
 
     public static void register() {

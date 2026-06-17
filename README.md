@@ -2,7 +2,7 @@
 
 WorldGen Editor is a JSON-driven Minecraft world generation mod for Minecraft `1.21.1`.
 
-It adds a datapack-style world preset named `WorldGen Editor: Islands`. The preset keeps vanilla noise generation as the base, then uses a custom island biome source and density function to turn the Overworld into a configurable archipelago.
+It adds datapack-style world presets named `WGE: Islands`, `WGE: Archipelago`, and `WGE: Small Island`. The presets keep vanilla noise generation as the base, then use a custom island biome source and density function to turn the Overworld into configurable islands.
 
 The project is built with Architectury Loom and targets:
 
@@ -19,7 +19,7 @@ The project is built with Architectury Loom and targets:
 - Per-entry biome exclusions with `exclude_biomes`, including biome ids and tags.
 - Climate-aware ocean and land fallback biome selection.
 - Backward-compatible support for older field names such as `center_x`, `center_z`, `x_divisor`, and `z_divisor`.
-- Built-in world preset: `WorldGen Editor: Islands`.
+- Built-in world presets: `WGE: Islands`, `WGE: Archipelago`, and `WGE: Small Island`.
 - Runtime commands for reload and per-world enable state.
 - Separate preview tool for developers: [WorldGen Editor Preview](https://github.com/waterflane/WorldGen-Editor-Preview).
 
@@ -87,7 +87,6 @@ common/src/main/resources/data/worldgen_editor/worldgen/world_preset/islands.jso
 common/src/main/resources/data/worldgen_editor/worldgen/noise_settings/island_overworld.json
 common/src/main/resources/assets/worldgen_editor/default_worldgen_editor.json
 common/src/main/resources/assets/worldgen_editor/presets/
-common/src/main/resources/assets/worldgen_editor/default_continents.json
 ```
 
 ## Using The Mod
@@ -95,7 +94,7 @@ common/src/main/resources/assets/worldgen_editor/default_continents.json
 Install the jar for your loader, then create a new world and select:
 
 ```text
-WorldGen Editor: Islands
+WGE: Islands
 ```
 
 The mod reads:
@@ -112,11 +111,11 @@ config/worldgen_editor/presets/
 
 Bundled presets and world types:
 
-- `WorldGen Editor: Islands` / `default`: the current standard island set.
-- `WorldGen Editor: Archipelago` / `archipelago`: several islands and an archipelago cluster.
-- `WorldGen Editor: Small Island` / `small_island`: one small spawn island.
+- `WGE: Islands` / `default`: the current standard island set.
+- `WGE: Archipelago` / `archipelago`: several islands and an archipelago cluster.
+- `WGE: Small Island` / `small_island`: one small spawn island.
 
-If the files do not exist, the mod creates defaults. Existing legacy `continents.json` files are still supported if the new main config is not present.
+If the files do not exist, the mod creates defaults. New installs use `worldgen_editor.json` and `presets/*.json`; `continents.json` is only a legacy fallback for old configs where the new main config is not present.
 
 Changing the config does not rebuild old chunks. Use this command after editing the file:
 
@@ -142,13 +141,19 @@ Generation is enabled only when both the global config and the per-world state a
 worldgen_editor.json enabled && <world>/worldgen_editor/worldgen_editor.json enabled
 ```
 
-You can change the config-selected preset with:
+Preset priority is:
+
+```text
+world type preset > config active_preset > legacy continents.json
+```
+
+You can change the config-selected fallback preset with:
 
 ```text
 /worldgen_editor preset archipelago
 ```
 
-The command affects newly generated chunks, the same as reload.
+The command affects newly generated chunks only when the current world does not already store a WGE world type preset.
 
 ## Config Guide
 

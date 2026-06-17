@@ -22,7 +22,6 @@ public final class IslandConfigLoader {
     public static final Path PRESETS_DIR = Path.of("config", Worldgen_editor.MOD_ID, "presets");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String LEGACY_DEFAULT_RESOURCE = "/assets/worldgen_editor/default_continents.json";
     private static final String MAIN_DEFAULT_RESOURCE = "/assets/worldgen_editor/default_worldgen_editor.json";
     private static final String PRESET_RESOURCE_ROOT = "/assets/worldgen_editor/presets/";
     private static final List<String> DEFAULT_PRESETS = List.of("default", "archipelago", "small_island");
@@ -149,19 +148,18 @@ public final class IslandConfigLoader {
     }
 
     private static void ensureDefaultExists() throws IOException {
-        if (Files.exists(MAIN_CONFIG_PATH)) {
-            ensurePresetDefaults();
+        ensurePresetDefaults();
+
+        if (Files.exists(CONFIG_PATH) && !Files.exists(MAIN_CONFIG_PATH)) {
             return;
         }
 
-        if (Files.exists(CONFIG_PATH)) {
+        if (Files.exists(MAIN_CONFIG_PATH)) {
             return;
         }
 
         Files.createDirectories(MAIN_CONFIG_PATH.getParent());
         copyBundledResource(MAIN_DEFAULT_RESOURCE, MAIN_CONFIG_PATH);
-        ensurePresetDefaults();
-        copyBundledResource(LEGACY_DEFAULT_RESOURCE, CONFIG_PATH);
     }
 
     private static void ensurePresetDefaults() throws IOException {

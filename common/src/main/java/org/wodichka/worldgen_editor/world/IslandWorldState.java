@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public final class IslandWorldState {
     private static volatile long worldSeed;
     private static volatile boolean enabled;
     private static volatile boolean worldEnabled = true;
-    private static volatile String presetOverride;
+    private static volatile String worldPresetName;
     private static volatile Path worldStatePath;
     private static volatile Registry<Biome> biomeRegistry;
     private static volatile Holder<Biome> oceanBiome;
@@ -80,11 +81,11 @@ public final class IslandWorldState {
 
     private static void loadGlobalConfig(String phase, boolean keepPreviousOnFailure) {
         try {
-            IslandConfig config = IslandConfigLoader.loadOrCreate(presetOverride);
+            IslandConfig config = IslandConfigLoader.loadOrCreate(worldPresetName);
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {} during {}", config.entries().size(), IslandConfigLoader.activeConfigPath(presetOverride), phase);
+            LOGGER.info("Loaded {} island entries from {} during {}", config.entries().size(), IslandConfigLoader.activeConfigPath(worldPresetName), phase);
         } catch (IslandConfigException exception) {
             if (keepPreviousOnFailure) {
                 LOGGER.error("Keeping previous island config because {} load failed: {}", phase, exception.getMessage());
@@ -100,6 +101,10 @@ public final class IslandWorldState {
 
     public static void loadForServer(MinecraftServer server) {
         worldSeed = server.overworld().getSeed();
+        String detectedPreset = detectWorldPreset(server);
+        if (detectedPreset != null) {
+            worldPresetName = detectedPreset;
+        }
         loadGlobalConfig("world start", false);
         worldStatePath = server.getWorldPath(LevelResource.ROOT).resolve(Worldgen_editor.MOD_ID).resolve("worldgen_editor.json");
         worldEnabled = loadOrCreateWorldState(worldStatePath);
@@ -130,14 +135,26 @@ public final class IslandWorldState {
         LOGGER.info("WorldGen Editor is {} for this world", enabled ? "enabled" : "disabled");
     }
 
+    private static String detectWorldPreset(MinecraftServer server) {
+        try {
+            BiomeSource biomeSource = server.overworld().getChunkSource().getGenerator().getBiomeSource();
+            if (biomeSource instanceof IslandBiomeSource islandBiomeSource) {
+                return islandBiomeSource.presetName();
+            }
+        } catch (RuntimeException exception) {
+            LOGGER.warn("Could not detect WorldGen Editor world preset from the loaded Overworld", exception);
+        }
+        return null;
+    }
+
     public static boolean reloadConfig() {
         try {
-            IslandConfig config = IslandConfigLoader.loadOrCreate(presetOverride);
+            IslandConfig config = IslandConfigLoader.loadOrCreate(worldPresetName);
             CONFIG.set(config);
             MASK.set(new IslandMask(config, worldSeed));
             refreshOuterOceanBiome();
             enabled = effectiveEnabled();
-            LOGGER.info("Loaded {} island entries from {} during reload", config.entries().size(), IslandConfigLoader.activeConfigPath(presetOverride));
+            LOGGER.info("Loaded {} island entries from {} during reload", config.entries().size(), IslandConfigLoader.activeConfigPath(worldPresetName));
             return true;
         } catch (IslandConfigException exception) {
             LOGGER.error("Keeping previous island config because reload failed: {}", exception.getMessage());
@@ -145,19 +162,32 @@ public final class IslandWorldState {
         }
     }
 
-    public static void setPresetOverride(String presetName) {
+    public static void setWorldPreset(String presetName) {
         if (presetName == null || presetName.isBlank()) {
             return;
         }
-        presetOverride = presetName;
+        if (presetName.equals(worldPresetName)) {
+            return;
+        }
+
+        worldPresetName = presetName;
+        loadGlobalConfig("world preset '" + presetName + "'", true);
+    }
+
+    public static boolean hasWorldPreset() {
+        return worldPresetName != null && !worldPresetName.isBlank();
+    }
+
+    public static String worldPresetName() {
+        return worldPresetName;
     }
 
     public static String activePresetName() {
-        return IslandConfigLoader.activePresetName(presetOverride);
+        return IslandConfigLoader.activePresetName(worldPresetName);
     }
 
     public static Path activeConfigPath() {
-        return IslandConfigLoader.activeConfigPath(presetOverride);
+        return IslandConfigLoader.activeConfigPath(worldPresetName);
     }
 
     public static boolean setEnabled(boolean value) {
@@ -194,12 +224,8 @@ public final class IslandWorldState {
         boolean deep = islandMask < IslandTerrainHooks.DEEP_OCEAN_MASK;
         ClimateBand climate = climateBand(source, delegate, blockX, blockZ);
         List<Holder<Biome>> candidates = switch (climate) {
-            case COLD -> deep
-                    ? nonNullBiomes(deepFrozenOceanBiome, deepColdOceanBiome, frozenOceanBiome, coldOceanBiome)
-                    : nonNullBiomes(frozenOceanBiome, coldOceanBiome);
-            case WARM -> deep
-                    ? nonNullBiomes(deepLukewarmOceanBiome, warmOceanBiome, lukewarmOceanBiome, deepOceanBiome, oceanBiome)
-                    : nonNullBiomes(warmOceanBiome, lukewarmOceanBiome, oceanBiome);
+            case COLD -> nonNullBiomes(frozenOceanBiome, deepFrozenOceanBiome, coldOceanBiome, deepColdOceanBiome);
+            case WARM -> nonNullBiomes(warmOceanBiome, lukewarmOceanBiome, deepLukewarmOceanBiome);
             case TEMPERATE -> deep
                     ? nonNullBiomes(deepOceanBiome, oceanBiome)
                     : nonNullBiomes(oceanBiome, deepOceanBiome);
@@ -209,6 +235,14 @@ public final class IslandWorldState {
             case WARM -> firstNonNull(warmOceanBiome, lukewarmOceanBiome, oceanBiome, deepOceanBiome);
             case TEMPERATE -> oceanBiome;
         };
+        if (climate == ClimateBand.COLD || climate == ClimateBand.WARM) {
+            Holder<Biome> picked = pickAllowed(candidates, source, blockX, blockZ);
+            if (picked != null) {
+                return picked;
+            }
+            warnAllExcluded(source);
+            return firstNonNull(fallback, oceanBiome, deepOceanBiome);
+        }
         return firstAllowed(candidates, source, fallback);
     }
 

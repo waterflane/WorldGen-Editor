@@ -47,21 +47,42 @@ public final class WorldgenEditorCommands {
 
     private static int status(CommandSourceStack source) {
         Path worldState = IslandWorldState.worldStatePath();
-        source.sendSuccess(() -> Component.literal("WorldGen Editor: "
-                + "effective=" + IslandWorldState.isEnabled()
-                + ", global_enabled=" + IslandWorldState.isGlobalEnabled()
-                + ", world_enabled=" + IslandWorldState.isWorldEnabled()
-                + ", islands=" + IslandWorldState.islandCount()
-                + ", preset=" + IslandWorldState.activePresetName()
-                + ", config=" + IslandWorldState.activeConfigPath()
-                + ", world_state=" + (worldState == null ? "not loaded" : worldState)), false);
+        source.sendSuccess(() -> Component.literal("""
+                WorldGen Editor Status
+                - Effective: %s
+                - Global config: %s
+                - World flag: %s
+                - World type preset: %s
+                - Active preset: %s
+                - Entries: %d
+                - Config: %s
+                - World state: %s""".formatted(
+                enabledText(IslandWorldState.isEnabled()),
+                enabledText(IslandWorldState.isGlobalEnabled()),
+                enabledText(IslandWorldState.isWorldEnabled()),
+                IslandWorldState.hasWorldPreset() ? IslandWorldState.worldPresetName() : "none",
+                IslandWorldState.activePresetName(),
+                IslandWorldState.islandCount(),
+                IslandWorldState.activeConfigPath(),
+                worldState == null ? "not loaded" : worldState
+        )), false);
         return IslandWorldState.isEnabled() ? 1 : 0;
+    }
+
+    private static String enabledText(boolean value) {
+        return value ? "enabled" : "disabled";
     }
 
     private static int setPreset(CommandSourceStack source, String presetName) {
         try {
             IslandConfigLoader.setActivePreset(presetName);
-            IslandWorldState.setPresetOverride(presetName);
+            if (IslandWorldState.hasWorldPreset()) {
+                source.sendSuccess(() -> Component.literal("WorldGen Editor config preset is now '" + presetName
+                        + "'. Current world type still uses preset '" + IslandWorldState.worldPresetName()
+                        + "'; config preset is used when no world preset is stored."), true);
+                return 1;
+            }
+
             boolean reloaded = IslandWorldState.reloadConfig();
             if (reloaded) {
                 source.sendSuccess(() -> Component.literal("WorldGen Editor preset is now '" + presetName + "'. Newly generated chunks will use it."), true);
