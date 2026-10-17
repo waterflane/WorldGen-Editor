@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-17",
+  "environment": "Windows, Amazon Corretto 22.0.2; timings are local measurements, not hardware-independent guarantees",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mask_baseline": {
+    "mod_commit": "c792da7",
+    "preview_commit": "4ab6144",
+    "preview_exact_256_ms": [
+      1372,
+      1290,
+      1288
+    ],
+    "region": [
+      -1024,
+      -1024,
+      2048,
+      2048
+    ],
+    "step": 8,
+    "seed": "12345"
+  },
+  "mask_after": {
+    "exact256_ms": [
+      197,
+      50,
+      36
+    ],
+    "cache_tiles": 256
+  },
+  "java_preview": {
+    "session_ms": 65.82,
+    "coarse_8x8_ms": 214.65,
+    "cached_8x8_ms": 2.06,
+    "dense_32x32_ms": 350.59,
+    "cancellation_ms": 5.0,
+    "info": {
+      "protocol": 1,
+      "minecraft": "1.21.1",
+      "generation_version": 2,
+      "resources": "minecraft-1.21.1-wge-2-a6d8f3682c28c4e54dd69c1ff977a1b8ed409b74a11548eb2045c431c2eb4757",
+      "heap_used_mib": 203
+    }
+  },
+  "runtime": {
+    "max_heap_mib": 512,
+    "jar_count": 29,
+    "jar_mib": 54.85,
+    "startup_seconds": 6.5
+  },
+  "process_memory": {
+    "WorkingSet64": 449298432,
+    "PeakWorkingSet64": 462532608,
+    "PrivateMemorySize64": 490795008
+  },
+  "regressions": {
+    "java_mask_golden_samples": 1440,
+    "legacy_biome_golden_cases": 576,
+    "dense_surface_columns": 256,
+    "node_tests_passed": 9
+  },
+  "real_neoforge_world": {
+    "biome_samples": 105,
+    "height_samples": 21,
+    "mismatches": 0
+  },
+  "terrablender": {
+    "version": "4.1.0.8",
+    "delegate_initialized": true,
+    "custom_biome_generated": true
+  },
+  "browser": {
+    "scenarios": [
+      "repeated invalid JSON",
+      "seed change",
+      "rapid pan and zoom",
+      "Y=300 slice",
+      "base relief",
+      "backend unavailable and recovery"
+    ],
+    "longtasks_over_50ms_after_redraw_fix": 0,
+    "scope": "manual in-app Chromium run with ?profile=1; default archipelago example"
+  }
+}

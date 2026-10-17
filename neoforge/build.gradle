@@ -55,3 +55,34 @@ shadowJar {
 remapJar {
     input.set shadowJar.archiveFile
 }
+
+sourceSets {
+    verification {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + sourceSets.main.runtimeClasspath
+    }
+}
+
+loom {
+    runs {
+        verification {
+            server()
+            source sourceSets.verification
+            runDir 'build/verification-run'
+            property 'neoforge.enableGameTest', 'true'
+            property 'neoforge.gameTestServer', 'true'
+            property 'neoforge.enabledGameTestNamespaces', 'worldgen_editor'
+            property 'wge.verification', 'true'
+            environmentVariable 'MOD_CLASSES', (sourceSets.main.output + sourceSets.verification.output).files.collect { 'main%%' + it.absolutePath }.join(File.pathSeparator)
+        }
+    }
+}
+tasks.named('runVerification').configure { dependsOn verificationClasses }
+
+if (project.hasProperty('withTerraBlender')) {
+    dependencies { modRuntimeOnly files('build/verification-libs/TerraBlender-neoforge-1.21.1-4.1.0.8.jar') }
+    sourceSets.verification.java.srcDir 'src/terrablenderVerification/java'
+    sourceSets.verification.compileClasspath += files('build/verification-libs/TerraBlender-neoforge-1.21.1-4.1.0.8.jar')
+    loom.runs.verification.property 'wge.terrablenderVerification', 'true'
+    loom.runs.verification.runDir 'build/terrablender-verification-run'
+}

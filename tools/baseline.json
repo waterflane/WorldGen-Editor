@@ -1,0 +1,17 @@
+{
+  "mod_commit": "c792da7",
+  "preview_commit": "4ab6144",
+  "preview_exact_256_ms": [
+    1372,
+    1290,
+    1288
+  ],
+  "region": [
+    -1024,
+    -1024,
+    2048,
+    2048
+  ],
+  "step": 8,
+  "seed": "12345"
+}
