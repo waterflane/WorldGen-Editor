@@ -39,6 +39,8 @@ public final class IslandBiomeRules {
     private final Holder<Biome> savannaBiome;
     private final Holder<Biome> jungleBiome;
     private final Holder<Biome> desertBiome;
+    private final Holder<Biome> riverBiome;
+    private final Holder<Biome> frozenRiverBiome;
     private final Set<String> EXCLUSION_WARNINGS = ConcurrentHashMap.newKeySet();
     private final List<TagKey<Biome>> OCEAN_TAGS = List.of(tag("minecraft:is_ocean"), tag("c:is_ocean"), tag("forge:is_ocean"));
     private final List<TagKey<Biome>> COLD_TAGS = List.of(tag("c:is_cold"), tag("forge:is_cold"), tag("c:cold"), tag("forge:cold"));
@@ -75,6 +77,8 @@ public final class IslandBiomeRules {
         savannaBiome = biomes.getHolderOrThrow(Biomes.SAVANNA);
         jungleBiome = biomes.getHolderOrThrow(Biomes.JUNGLE);
         desertBiome = biomes.getHolderOrThrow(Biomes.DESERT);
+        riverBiome = biomes.getHolderOrThrow(Biomes.RIVER);
+        frozenRiverBiome = biomes.getHolderOrThrow(Biomes.FROZEN_RIVER);
         refreshOuterOceanBiome();
     }
 
@@ -137,7 +141,7 @@ public final class IslandBiomeRules {
                 taigaBiome,
                 savannaBiome,
                 jungleBiome,
-                desertBiome
+                desertBiome, riverBiome, frozenRiverBiome
         );
     }
 
@@ -181,6 +185,13 @@ public final class IslandBiomeRules {
         }
 
         ClimateBand configured = configuredClimateBand(source);
+        if (generationVersion >= 2 && isRiver(delegate) && !isExcluded(delegate, source)) {
+            Holder<Biome> river = delegate;
+            if (delegate.is(Biomes.RIVER) || delegate.is(Biomes.FROZEN_RIVER)) {
+                river = configured == null ? delegate : configured == ClimateBand.COLD ? frozenRiverBiome : riverBiome;
+            }
+            if (!isExcluded(river, source)) return river;
+        }
         if (generationVersion >= 2 && isUnderground(delegate) && !isExcluded(delegate, source)) {
             return delegate;
         }
@@ -492,6 +503,10 @@ public final class IslandBiomeRules {
         WARM
     }
 
+    private boolean isRiver(Holder<Biome> biome) {
+        return biome != null && (biome.is(Biomes.RIVER) || biome.is(Biomes.FROZEN_RIVER)
+                || biome.is(tag("minecraft:is_river")) || biome.is(tag("c:is_river")) || biome.is(tag("forge:is_river")));
+    }
     private boolean isUnderground(Holder<Biome> biome) {
         return biome != null && (biome.is(Biomes.LUSH_CAVES) || biome.is(Biomes.DRIPSTONE_CAVES)
                 || biome.is(Biomes.DEEP_DARK) || biome.is(tag("c:is_underground")) || biome.is(tag("forge:is_underground")));

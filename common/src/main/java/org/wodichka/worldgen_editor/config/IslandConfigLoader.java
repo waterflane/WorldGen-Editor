@@ -312,7 +312,8 @@ public final class IslandConfigLoader {
                     || Math.abs(entry.centerX()) > 30000000 || Math.abs(entry.centerZ()) > 30000000
                     || Math.abs(entry.rotationDegrees()) > 360000
                     || entry.maxRadius() * Math.max(1, entry.maxStretch()) > 60000000
-                    || entry.maxStretch() > 100 || entry.spacing() > 1000) {
+                    || entry.maxStretch() > 100 || entry.spacing() > 1000
+                    || (entry.type() == IslandEntryType.ARCHIPELAGO && entry.minRadius() * Math.min(1, entry.minStretch()) < 0.001)) {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
@@ -424,7 +425,7 @@ public final class IslandConfigLoader {
     }
 
     private static IslandEntryType parseEntryType(String value, String path) throws IslandConfigException {
-        return switch (value.toLowerCase()) {
+        return switch (value.toLowerCase(java.util.Locale.ROOT)) {
             case "island" -> IslandEntryType.ISLAND;
             case "ocean" -> IslandEntryType.OCEAN;
             case "archipelago" -> IslandEntryType.ARCHIPELAGO;
@@ -433,7 +434,7 @@ public final class IslandConfigLoader {
     }
 
     private static IslandTemperature parseTemperature(String value, String path) throws IslandConfigException {
-        return switch (value.toLowerCase()) {
+        return switch (value.toLowerCase(java.util.Locale.ROOT)) {
             case "standard", "standart", "vanilla", "auto" -> IslandTemperature.STANDARD;
             case "cold" -> IslandTemperature.COLD;
             case "temperate", "normal" -> IslandTemperature.TEMPERATE;

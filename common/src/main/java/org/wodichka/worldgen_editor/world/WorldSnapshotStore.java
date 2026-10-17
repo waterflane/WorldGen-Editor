@@ -11,21 +11,24 @@ public final class WorldSnapshotStore {
     public record Snapshot(boolean enabled,String preset,int generationVersion,IslandConfig config) {
         public Snapshot {
             GenerationContext.validateVersion(generationVersion);
+            if(preset==null||!preset.matches("[a-z0-9_.-]+"))throw new IllegalArgumentException("Invalid world preset name");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
         }
     }
     public interface ConfigSupplier { IslandConfig get(String preset)throws IslandConfigException; }
     public static Snapshot loadOrCreate(Path path,String defaultPreset,int defaultVersion,ConfigSupplier defaults)throws IOException,IslandConfigException {
         try {
-            JsonObject saved=Files.exists(path)?JsonParser.parseString(Files.readString(path)).getAsJsonObject():new JsonObject();
+            boolean existing=Files.exists(path);
+            JsonObject saved=existing?JsonParser.parseString(Files.readString(path)).getAsJsonObject():new JsonObject();
             boolean enabled=true;
             if(saved.has("enabled")) {
                 if(!saved.get("enabled").isJsonPrimitive()||!saved.getAsJsonPrimitive("enabled").isBoolean())throw new IslandConfigException("World enabled must be boolean");
                 enabled=saved.get("enabled").getAsBoolean();
             }
             String preset=saved.has("preset")?saved.get("preset").getAsString():defaultPreset;
-            int version=defaultVersion;
+            int version=existing ? GenerationContext.LEGACY_VERSION : defaultVersion;
             if(saved.has("generation_version")) {
+                if(!saved.get("generation_version").isJsonPrimitive() || !saved.getAsJsonPrimitive("generation_version").isNumber())throw new IslandConfigException("generation_version must be a number");
                 double number=saved.get("generation_version").getAsDouble();
                 if(!Double.isFinite(number)||number!=Math.rint(number)||number<1||number>2)throw new IslandConfigException("Unsupported generation_version");
                 version=(int)number;

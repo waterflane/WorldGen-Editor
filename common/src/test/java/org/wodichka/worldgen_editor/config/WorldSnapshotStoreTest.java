@@ -11,14 +11,14 @@ public final class WorldSnapshotStoreTest {
         var config=IslandConfigLoader.parse(JsonParser.parseString("{\"enabled\":true,\"entries\":[{\"x\":0,\"z\":0,\"radius\":100}]}"));
         Path state=dir.resolve("worldgen_editor.json");
         Files.writeString(state,"{\"enabled\":false}");
-        var legacy=WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);
+        var legacy=WorldSnapshotStore.loadOrCreate(state,"default",2,name->config);
         check(!legacy.enabled()&&legacy.generationVersion()==1,"old flag/version must survive");
         var pinned=WorldSnapshotStore.loadOrCreate(state,"other",2,name->{throw new AssertionError("pinned world must not reload global presets");});
         check(legacy.equals(pinned),"snapshot changed after restart");
         var migrated=new WorldSnapshotStore.Snapshot(true,"small_island",2,config);
         WorldSnapshotStore.save(state,migrated);
         check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->config).equals(migrated),"migration must persist");
-        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":3}"}){
+        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":3}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
             Files.writeString(state,invalid);
             try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid snapshot accepted");}
             catch(IslandConfigException expected){check(Files.readString(state).equals(invalid),"failed load rewrote the snapshot");}
