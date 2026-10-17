@@ -12,3 +12,4 @@ rootProject.name = 'worldgen_editor'
 include 'common'
 include 'neoforge'
 
+include 'preview-engine'

@@ -1,4 +1,5 @@
 plugins {
+    id 'base'
     id 'dev.architectury.loom' version '1.14-SNAPSHOT' apply false
     id 'architectury-plugin' version '3.4-SNAPSHOT'
     id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
@@ -19,7 +20,7 @@ subprojects {
     apply plugin: 'maven-publish'
 
     base {
-        // Set up a suffixed format for the mod jar names, e.g. `example-fabric`.
+        // Keep module names in the artifact names.
         archivesName = "$rootProject.archives_name-$project.name"
     }
 
@@ -73,15 +74,14 @@ tasks.register('releaseJars', Copy) {
     group = 'build'
     description = 'Copies loader-ready mod jars into the root release directory.'
 
-    dependsOn ':neoforge:build'
+    dependsOn ':neoforge:build', ':common:check', ':preview-engine:check'
 
     into layout.projectDirectory.dir('release')
     from(project(':neoforge').layout.buildDirectory.file("libs/${archives_name}-neoforge-${mod_version}.jar"))
 }
 
-gradle.projectsEvaluated {
-    def buildTask = tasks.findByName('build')
-    if (buildTask != null) {
-        buildTask.finalizedBy(tasks.named('releaseJars'))
-    }
+tasks.named('check') {
+    dependsOn ':common:check', ':preview-engine:check'
 }
+tasks.named('assemble') { dependsOn ':neoforge:assemble' }
+tasks.named('build') { dependsOn tasks.named('releaseJars') }

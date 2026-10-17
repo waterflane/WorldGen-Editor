@@ -1,0 +1,59 @@
+loom { serverOnlyMinecraftJar() }
+
+dependencies {
+    implementation project(path: ':common', configuration: 'namedElements')
+}
+
+tasks.register('runPreview', JavaExec) {
+    dependsOn classes, ':common:classes'
+    classpath = sourceSets.main.runtimeClasspath + project(':common').sourceSets.main.output
+    mainClass = 'org.wodichka.worldgen_editor.preview.PreviewServer'
+    maxHeapSize = '512m'
+    workingDir rootProject.layout.buildDirectory.dir('preview-run')
+    doFirst { workingDir.mkdirs() }
+    args rootProject.file('../WorldGen Editor Preview').absolutePath
+}
+
+tasks.register('preparePreview', DefaultTask) {
+    dependsOn classes, ':common:classes'
+    doLast {
+        def output = layout.buildDirectory.dir('runtime').get().asFile
+        output.mkdirs()
+        def files = (sourceSets.main.runtimeClasspath + project(':common').sourceSets.main.output).files.findAll {
+            def name = it.name
+            !name.startsWith('lwjgl') && !name.startsWith('oshi-') && !name.startsWith('jna') &&
+            !name.startsWith('icu4j') && !name.startsWith('text2speech') && !name.startsWith('jorbis') &&
+            !name.startsWith('dev-launch-injector') && !name.startsWith('fabric-log4j') && name != 'mappings.jar'
+        }
+        def cp = files.collect { it.absolutePath.replace('\\', '/') }.join(File.pathSeparator)
+        new File(output, 'java.args').text = '-Xmx512m\n-cp\n"' + cp + '"\norg.wodichka.worldgen_editor.preview.PreviewServer\n'
+        new File(output, 'java.path').text = System.getProperty('java.home')
+        println "Prepared preview runtime: ${output}"
+    }
+}
+
+tasks.register('runContextTests', JavaExec) {
+    dependsOn testClasses, ':common:classes'
+    classpath = sourceSets.test.runtimeClasspath + project(':common').sourceSets.main.output
+    mainClass = 'org.wodichka.worldgen_editor.preview.GenerationContextTest'
+    maxHeapSize = '512m'
+    workingDir rootProject.layout.buildDirectory.dir('preview-tests')
+    doFirst { workingDir.mkdirs() }
+}
+check.dependsOn runContextTests
+
+// NeoForge supplies convention biome tags even with no third-party mods installed.
+// Copy only data; the standalone runtime never loads NeoForge classes or a mod loader.
+def neoForgeBiomeTags = tasks.register('prepareNeoForgeBiomeTags', Copy) {
+    from { project(':neoforge').loom.minecraftProvider.minecraftJars.collect { zipTree(it.toFile()) } }
+    include 'data/*/tags/worldgen/biome/**/*.json', 'data/*/tags/worldgen/biome/*.json'
+    into layout.buildDirectory.dir('generated/neoforge-tags')
+    doLast {
+        if (fileTree(destinationDir).matching { include 'data/c/tags/worldgen/biome/**/*.json' }.empty) {
+            throw new GradleException('NeoForge convention biome tags were not found in the prepared runtime')
+        }
+    }
+}
+sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated/neoforge-tags')
+tasks.named('processResources').configure { dependsOn neoForgeBiomeTags }
+tasks.named('sourcesJar').configure { dependsOn neoForgeBiomeTags }
