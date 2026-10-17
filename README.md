@@ -81,6 +81,7 @@ For a real NeoForge world vs preview comparison, first start the Java preview, t
 ```
 
 This uses a private GameTest world under `neoforge/build/verification-run`, and checks actual chunk biomes at surface/300/64/0/-32 plus base heights. Results are written to `parity-result.json` inside that directory.
+Fixed seed-zero control points also assert an actual river, lush caves and samples on both sides of an island shore transition.
 The test-only flat-preset override and test biome are excluded from the release jar.
 
 Optional TerraBlender verification (the download script checks the published SHA-512):

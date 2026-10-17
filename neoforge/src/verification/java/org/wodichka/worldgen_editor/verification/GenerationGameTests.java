@@ -26,6 +26,18 @@ public final class GenerationGameTests {
         if(response.statusCode()!=200)throw new AssertionError(response.body());
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
+    private static JsonObject query(String session,int x,int y,int z,String mode) {
+        var query=new JsonObject();query.addProperty("session",session);query.addProperty("request",100000);
+        query.addProperty("x",x);query.addProperty("z",z);query.addProperty("size",1);query.addProperty("step",1);
+        query.addProperty("height_mode",mode);query.addProperty("y",y);return query;
+    }
+    private static String compareBiome(GameTestHelper helper,String session,int x,int y,int z)throws Exception {
+        var tile=post("tile",query(session,x,y,z,"slice"));
+        String expected=tile.getAsJsonArray("palette").get(tile.getAsJsonArray("biomes").get(0).getAsInt()).getAsString();
+        String actual=helper.getLevel().getBiome(new BlockPos(x,y,z)).unwrapKey().orElseThrow().location().toString();
+        helper.assertTrue(expected.equals(actual),"Biome mismatch at "+x+","+y+","+z+": "+actual+" != "+expected);
+        return actual;
+    }
     @GameTest(template="empty",timeoutTicks=1200)
     public static void previewMatchesWorld(GameTestHelper helper) throws Exception {
         if(Boolean.getBoolean("wge.terrablenderVerification")) {
@@ -39,23 +51,32 @@ public final class GenerationGameTests {
         request.add("config",IslandConfigLoader.toJson(context.config()));request.addProperty("generation_version",2);
         String session=post("session",request).get("session").getAsString();
         var generator=(NoiseBasedChunkGenerator)level.getChunkSource().getGenerator();
-        int compared=0;
+        int compared=0,heightChecks=0;
         for(int x:new int[]{-2400,-1700,-640,0,640,1500,2400}) for(int z:new int[]{-640,0,720}) {
             int surface=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,level,level.getChunkSource().randomState())-1;
             for(int y:new int[]{surface,300,64,0,-32}) {
-                var query=new JsonObject();query.addProperty("session",session);query.addProperty("request",100000);
-                query.addProperty("x",x);query.addProperty("z",z);query.addProperty("size",1);query.addProperty("step",1);
-                query.addProperty("height_mode","slice");query.addProperty("y",y);
-                var tile=post("tile",query);String expected=tile.getAsJsonArray("palette").get(tile.getAsJsonArray("biomes").get(0).getAsInt()).getAsString();
-                String actual=level.getBiome(new BlockPos(x,y,z)).unwrapKey().orElseThrow().location().toString();
-                helper.assertTrue(expected.equals(actual),"Biome mismatch at "+x+","+y+","+z+": "+actual+" != "+expected);compared++;
+                compareBiome(helper,session,x,y,z);compared++;
             }
-            var query=new JsonObject();query.addProperty("session",session);query.addProperty("request",100000);
-            query.addProperty("x",x);query.addProperty("z",z);query.addProperty("size",1);query.addProperty("step",1);query.addProperty("height_mode","surface");
-            var tile=post("tile",query);
+            var tile=post("tile",query(session,x,0,z,"surface"));
             helper.assertTrue(tile.getAsJsonArray("heights").get(0).getAsInt()==surface,"Base height mismatch");
+            heightChecks++;
         }
-        Files.writeString(Path.of("parity-result.json"),"{\"biome_samples\":"+compared+",\"height_samples\":21,\"mismatches\":0}");
+        // Fixed seed-zero oracle locations ensure these categories are actually present in the test.
+        String river=compareBiome(helper,session,832,300,-960);compared++;
+        helper.assertTrue(river.equals("minecraft:river"),"River control point no longer contains a river");
+        String cave=compareBiome(helper,session,128,0,-704);compared++;
+        helper.assertTrue(cave.equals("minecraft:lush_caves"),"Underground control point no longer contains lush caves");
+        double edge=context.mask().sample(-1267,0);
+        helper.assertTrue(edge>.49 && edge<.51,"Shore control point must lie on the island transition");
+        for(int x:new int[]{-1271,-1267,-1263}) {
+            int surface=generator.getBaseHeight(x,0,Heightmap.Types.WORLD_SURFACE_WG,level,level.getChunkSource().randomState())-1;
+            var tile=post("tile",query(session,x,0,0,"surface"));
+            helper.assertTrue(tile.getAsJsonArray("heights").get(0).getAsInt()==surface,"Shore base height mismatch");heightChecks++;
+            compareBiome(helper,session,x,surface,0);compareBiome(helper,session,x,300,0);compared+=2;
+        }
+        var result=new JsonObject();result.addProperty("biome_samples",compared);result.addProperty("height_samples",heightChecks);
+        result.addProperty("mismatches",0);result.addProperty("river",river);result.addProperty("underground",cave);result.addProperty("shore_mask",edge);
+        Files.writeString(Path.of("parity-result.json"),result.toString());
         helper.succeed();
     }
 }

@@ -60,9 +60,12 @@
     "node_tests_passed": 9
   },
   "real_neoforge_world": {
-    "biome_samples": 105,
-    "height_samples": 21,
-    "mismatches": 0
+    "biome_samples": 113,
+    "height_samples": 24,
+    "mismatches": 0,
+    "river": "minecraft:river",
+    "underground": "minecraft:lush_caves",
+    "shore_mask": 0.4936867240919682
   },
   "terrablender": {
     "version": "4.1.0.8",
@@ -79,6 +82,9 @@
       "backend unavailable and recovery"
     ],
     "longtasks_over_50ms_after_redraw_fix": 0,
-    "scope": "manual in-app Chromium run with ?profile=1; default archipelago example"
+    "scope": "manual in-app Chromium run with ?profile=1; default archipelago example",
+    "balanced_full_view_ms": 19795,
+    "balanced_sample_step_blocks": 64,
+    "note": "First coarse image is shown before refinement; full uncached base-surface refinement of a large area can still take tens of seconds."
   }
 }
