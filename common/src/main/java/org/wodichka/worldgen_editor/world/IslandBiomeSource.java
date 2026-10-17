@@ -4,6 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,17 +23,24 @@ public final class IslandBiomeSource extends BiomeSource {
     public static final String DEFAULT_PRESET = "default";
     public static final MapCodec<IslandBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("delegate").forGetter(source -> source.delegate),
-            Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName)
+            Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName),
+            Codec.intRange(1, 2).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
+            RegistryOps.retrieveGetter(Registries.BIOME)
     ).apply(instance, IslandBiomeSource::new));
 
     private static boolean registered;
 
     private final BiomeSource delegate;
     private final String presetName;
+    private final int generationVersion;
+    private final HolderGetter<Biome> biomeGetter;
+    private final GenerationBinding binding = new GenerationBinding();
 
-    private IslandBiomeSource(BiomeSource delegate, String presetName) {
+    private IslandBiomeSource(BiomeSource delegate, String presetName, int generationVersion, HolderGetter<Biome> biomeGetter) {
         this.delegate = delegate;
         this.presetName = presetName;
+        this.generationVersion = generationVersion;
+        this.biomeGetter = biomeGetter;
     }
 
     public String presetName() {
@@ -46,12 +56,10 @@ public final class IslandBiomeSource extends BiomeSource {
         Registry.register(BuiltInRegistries.BIOME_SOURCE, ID, CODEC);
     }
 
-    public static BiomeSource wrap(BiomeSource delegate) {
-        if (delegate instanceof IslandBiomeSource) {
-            return delegate;
-        }
-        return new IslandBiomeSource(delegate, DEFAULT_PRESET);
-    }
+    public BiomeSource delegate() { return delegate; }
+    public int generationVersion() { return generationVersion; }
+    public GenerationBinding binding() { return binding; }
+    public void bind(GenerationBinding value) { binding.attach(value); }
 
     @Override
     protected MapCodec<? extends BiomeSource> codec() {
@@ -60,18 +68,17 @@ public final class IslandBiomeSource extends BiomeSource {
 
     @Override
     protected Stream<Holder<Biome>> collectPossibleBiomes() {
-        return Stream.of(
-                        delegate.possibleBiomes().stream(),
-                        IslandWorldState.oceanBiomes().stream(),
-                        IslandWorldState.fallbackLandBiomes().stream()
-                )
-                .flatMap(stream -> stream)
-                .distinct();
+        GenerationContext context = binding.get();
+        Stream<Holder<Biome>> extra = context == null ? Stream.empty()
+                : Stream.concat(context.biomes().holders().filter(context.biomeRules()::isOceanBiome), context.biomeRules().fallbackLandBiomes().stream());
+        return Stream.concat(delegate.possibleBiomes().stream(), extra).distinct();
     }
 
     @Override
     public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
-        IslandMask mask = IslandWorldState.mask();
+        GenerationContext context = binding.get();
+        if (context == null) return delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+        IslandMask mask = context.mask();
         if (mask.isEmpty()) {
             return delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
         }
@@ -82,7 +89,7 @@ public final class IslandBiomeSource extends BiomeSource {
         Holder<Biome> delegateBiome = delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
         if (sample.value() < IslandTerrainHooks.FULL_OCEAN_MASK) {
             if (sample.oceanSource() == null && sample.archipelagoSource() == null && sample.landSource() == null) {
-                Holder<Biome> outerOcean = IslandWorldState.outerOceanBiome();
+                Holder<Biome> outerOcean = context.biomeRules().outerOceanBiome();
                 if (outerOcean != null) {
                     return outerOcean;
                 }
@@ -90,13 +97,13 @@ public final class IslandBiomeSource extends BiomeSource {
             IslandMask.SourceInfo source = sample.oceanSource() != null
                     ? sample.oceanSource()
                     : sample.archipelagoSource() != null ? sample.archipelagoSource() : sample.landSource();
-            Holder<Biome> ocean = IslandWorldState.oceanBiome(sample.value(), source, delegateBiome, blockX, blockZ);
+            Holder<Biome> ocean = context.biomeRules().oceanBiome(sample.value(), source, delegateBiome, blockX, blockZ);
             if (ocean != null) {
                 return ocean;
             }
         }
 
         IslandMask.SourceInfo source = sample.landSource() != null ? sample.landSource() : sample.archipelagoSource();
-        return IslandWorldState.landBiome(sample.value(), source, delegateBiome, blockX, blockZ);
+        return context.biomeRules().landBiome(sample.value(), source, delegateBiome, blockX, blockZ);
     }
 }

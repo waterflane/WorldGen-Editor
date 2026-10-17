@@ -22,11 +22,22 @@ public final class IslandDensityFunction implements DensityFunction {
     private static boolean registered;
 
     private final DensityFunction delegate;
+    private final GenerationBinding binding;
     private final int seaLevel;
 
     public IslandDensityFunction(DensityFunction delegate, int seaLevel) {
+        this(delegate, seaLevel, new GenerationBinding());
+    }
+
+    private IslandDensityFunction(DensityFunction delegate, int seaLevel, GenerationBinding binding) {
         this.delegate = delegate;
+        this.binding = binding;
         this.seaLevel = seaLevel;
+    }
+
+    public void bind(GenerationBinding value) { binding.attach(value); }
+    public IslandDensityFunction withBinding(GenerationBinding value) {
+        return new IslandDensityFunction(delegate, seaLevel, value);
     }
 
     public static void register() {
@@ -55,7 +66,7 @@ public final class IslandDensityFunction implements DensityFunction {
     @Override
     public DensityFunction mapAll(Visitor visitor) {
         DensityFunction mapped = delegate.mapAll(visitor);
-        return visitor.apply(new IslandDensityFunction(mapped, seaLevel));
+        return visitor.apply(new IslandDensityFunction(mapped, seaLevel, binding));
     }
 
     @Override
@@ -74,7 +85,9 @@ public final class IslandDensityFunction implements DensityFunction {
     }
 
     private double shape(FunctionContext context, double vanilla) {
-        IslandMask mask = IslandWorldState.mask();
+        GenerationContext snapshot = binding.get();
+        if (snapshot == null) return vanilla;
+        IslandMask mask = snapshot.mask();
         if (mask.isEmpty()) {
             return vanilla;
         }

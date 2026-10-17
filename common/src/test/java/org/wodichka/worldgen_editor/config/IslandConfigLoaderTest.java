@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 
 public final class IslandConfigLoaderTest {
     public static void main(String[] args) throws Exception {
+        goldenMasks();
+        rejectsUnsafeNumbers();
+        roundTripsSnapshot();
         parsesMainPresetConfig();
         bundledPresetsParse();
         parsesSimpleConfig();
@@ -30,6 +33,34 @@ public final class IslandConfigLoaderTest {
         sampleInfoReportsSources();
         archipelagoMaskIsDeterministic();
         islandMaskIsDeterministic();
+    }
+
+    private static void goldenMasks() throws Exception {
+        var cases = readResource("/legacy-mask.json").getAsJsonArray();
+        for (var item : cases) {
+            var object = item.getAsJsonObject();
+            IslandMask mask = new IslandMask(IslandConfigLoader.parse(object.get("config")), Long.parseLong(object.get("seed").getAsString()));
+            for (var point : object.getAsJsonArray("points")) {
+                var values = point.getAsJsonArray();
+                assertTrue(Double.compare(mask.sample(values.get(0).getAsInt(), values.get(1).getAsInt()), values.get(2).getAsDouble()) == 0, "legacy mask changed");
+            }
+        }
+    }
+
+    private static void roundTripsSnapshot() throws Exception {
+        for (String name : java.util.List.of("default", "archipelago", "small_island")) {
+            var config = IslandConfigLoader.parse(readResource("/assets/worldgen_editor/presets/" + name + ".json"));
+            assertTrue(config.equals(IslandConfigLoader.parse(IslandConfigLoader.toJson(config))), "snapshot must round trip " + name);
+        }
+    }
+
+    private static void rejectsUnsafeNumbers() {
+        for (String extra : java.util.List.of(
+                "\"noise\":{\"first_octave\":1024}", "\"noise\":{\"first_octave\":2147483648}",
+                "\"stretch_x\":1e308", "\"noise\":{\"amplitudes\":[1e308,1e308]}",
+                "\"noise\":{\"scale\":1e308}")) {
+            assertThrows(() -> IslandConfigLoader.parse(JsonParser.parseString("{\"entries\":[{\"x\":0,\"z\":0,\"radius\":100," + extra + "}]}")), "unsafe numeric config must fail");
+        }
     }
 
     private static void parsesMainPresetConfig() throws Exception {

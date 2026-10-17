@@ -6,11 +6,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import org.wodichka.worldgen_editor.Worldgen_editor;
-import org.wodichka.worldgen_editor.config.IslandConfigException;
-import org.wodichka.worldgen_editor.config.IslandConfigLoader;
 import org.wodichka.worldgen_editor.world.IslandWorldState;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 public final class WorldgenEditorCommands {
@@ -29,6 +26,12 @@ public final class WorldgenEditorCommands {
                 .then(Commands.literal("preset")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .executes(context -> setPreset(context.getSource(), StringArgumentType.getString(context, "name")))))
+                .then(Commands.literal("migrate")
+                        .executes(context -> {
+                            if (!IslandWorldState.migrate()) return 0;
+                            context.getSource().sendSuccess(() -> Component.literal("Generation migrated to version 2; existing chunks are unchanged."), true);
+                            return 1;
+                        }))
                 .then(Commands.literal("reload")
                         .executes(context -> reload(context.getSource()))));
     }
@@ -54,6 +57,7 @@ public final class WorldgenEditorCommands {
                 - World flag: %s
                 - World type preset: %s
                 - Active preset: %s
+                - Generation version: %d
                 - Entries: %d
                 - Config: %s
                 - World state: %s""".formatted(
@@ -62,6 +66,7 @@ public final class WorldgenEditorCommands {
                 enabledText(IslandWorldState.isWorldEnabled()),
                 IslandWorldState.hasWorldPreset() ? IslandWorldState.worldPresetName() : "none",
                 IslandWorldState.activePresetName(),
+                IslandWorldState.generationVersion(),
                 IslandWorldState.islandCount(),
                 IslandWorldState.activeConfigPath(),
                 worldState == null ? "not loaded" : worldState
@@ -74,26 +79,12 @@ public final class WorldgenEditorCommands {
     }
 
     private static int setPreset(CommandSourceStack source, String presetName) {
-        try {
-            IslandConfigLoader.setActivePreset(presetName);
-            if (IslandWorldState.hasWorldPreset()) {
-                source.sendSuccess(() -> Component.literal("WorldGen Editor config preset is now '" + presetName
-                        + "'. Current world type still uses preset '" + IslandWorldState.worldPresetName()
-                        + "'; config preset is used when no world preset is stored."), true);
-                return 1;
-            }
-
-            boolean reloaded = IslandWorldState.reloadConfig();
-            if (reloaded) {
-                source.sendSuccess(() -> Component.literal("WorldGen Editor preset is now '" + presetName + "'. Newly generated chunks will use it."), true);
-                return 1;
-            }
-            source.sendFailure(Component.literal("Preset was saved, but reload failed. Check the log before generating new chunks."));
-            return 0;
-        } catch (IslandConfigException | IOException exception) {
-            source.sendFailure(Component.literal("Could not set WorldGen Editor preset: " + exception.getMessage()));
-            return 0;
+        if (IslandWorldState.selectPreset(presetName)) {
+            source.sendSuccess(() -> Component.literal("World preset changed to " + presetName + "; only new chunks are affected."), true);
+            return 1;
         }
+        source.sendFailure(Component.literal("Could not change world preset; previous snapshot is still active."));
+        return 0;
     }
 
     private static int reload(CommandSourceStack source) {

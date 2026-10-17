@@ -310,6 +310,7 @@ public final class IslandMask {
             double normalizedX = rotatedX / xDivisor;
             double normalizedZ = rotatedZ / zDivisor;
             double distance = superellipseDistance(normalizedX, normalizedZ, shapePower);
+            if (distance > multiplier * (1.0D + noiseStrength) + edgeWidth) return 0.0D;
             double edgeNoise = normalizedNoise(normalizedX * noise.scale(), normalizedZ * noise.scale()) * noiseStrength;
             double field = multiplier * (1.0D + edgeNoise) - distance;
 

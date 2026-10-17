@@ -199,7 +199,7 @@ public final class IslandConfigLoader {
         }
     }
 
-    static IslandConfig parse(JsonElement root) throws IslandConfigException {
+    public static IslandConfig parse(JsonElement root) throws IslandConfigException {
         JsonObject object = requireObject(root, "root");
         boolean enabled = optionalBoolean(object, "enabled", false, "root");
         String outerOcean = optionalString(object, "outer_ocean", IslandConfig.DEFAULT_OUTER_OCEAN, "root");
@@ -228,12 +228,17 @@ public final class IslandConfigLoader {
             double stretchZ = optionalPositiveDouble(entry, path, 1.0D, "stretch_z");
             double compiledRadiusX = radiusX * stretchX;
             double compiledRadiusZ = radiusZ * stretchZ;
+            if (!Double.isFinite(compiledRadiusX) || !Double.isFinite(compiledRadiusZ)
+                    || compiledRadiusX > 60000000D || compiledRadiusZ > 60000000D
+                    || compiledRadiusX < 0.001D || compiledRadiusZ < 0.001D) {
+                throw new IslandConfigException(path + ": compiled radii must be finite and between 0.001 and 60000000");
+            }
 
             if (radiusX <= 0.0D || radiusZ <= 0.0D) {
                 throw new IslandConfigException(path + " must define either radius or both radius_x and radius_z");
             }
 
-            int count = type == IslandEntryType.ARCHIPELAGO ? optionalPositiveInt(entry, path, DEFAULT_ARCHIPELAGO_COUNT, "count") : 0;
+            int count = type == IslandEntryType.ARCHIPELAGO ? optionalRangeInt(entry, path, DEFAULT_ARCHIPELAGO_COUNT, 1, 4096, "count") : 0;
             double clusterRadius = Math.max(compiledRadiusX, compiledRadiusZ);
             double minRadius = type == IslandEntryType.ARCHIPELAGO
                     ? optionalPositiveDouble(entry, path, clusterRadius * 0.08D, "min_radius")
@@ -275,7 +280,7 @@ public final class IslandConfigLoader {
                     new IslandNoise(
                             amplitudes,
                             noise == null ? name : optionalString(noise, "seed", name, path + ".noise"),
-                            noise == null ? DEFAULT_FIRST_OCTAVE : optionalInt(noise, "first_octave", DEFAULT_FIRST_OCTAVE, path + ".noise"),
+                            noise == null ? DEFAULT_FIRST_OCTAVE : optionalRangeInt(noise, path + ".noise", DEFAULT_FIRST_OCTAVE, -20, 20, "first_octave"),
                             noise == null ? DEFAULT_NOISE_SCALE : optionalPositiveDouble(noise, path + ".noise", DEFAULT_NOISE_SCALE, "scale")
                     ),
                     compiledRadiusX,
@@ -299,7 +304,53 @@ public final class IslandConfigLoader {
             ));
         }
 
+        for (IslandEntry entry : parsedEntries) {
+            double amplitudeSum = entry.noise().amplitudes().stream().mapToDouble(Double::doubleValue).sum();
+            if (!Double.isFinite(amplitudeSum) || entry.noise().amplitudes().size() > 16
+                    || entry.noise().scale() > 1024 || entry.multiplier() > 100 || entry.edgeWidth() > 10
+                    || entry.noise().firstOctave() + entry.noise().amplitudes().size() - 1 > 12
+                    || Math.abs(entry.centerX()) > 30000000 || Math.abs(entry.centerZ()) > 30000000
+                    || Math.abs(entry.rotationDegrees()) > 360000
+                    || entry.maxRadius() * Math.max(1, entry.maxStretch()) > 60000000
+                    || entry.maxStretch() > 100 || entry.spacing() > 1000) {
+                throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
+            }
+        }
         return new IslandConfig(enabled, outerOcean, parsedEntries);
+    }
+
+    public static JsonObject toJson(IslandConfig config) {
+        JsonObject root = new JsonObject();
+        root.addProperty("enabled", config.enabled());
+        root.addProperty("outer_ocean", config.outerOcean());
+        JsonArray entries = new JsonArray();
+        for (IslandEntry entry : config.entries()) {
+            JsonObject value = new JsonObject();
+            value.addProperty("type", entry.type().name().toLowerCase(java.util.Locale.ROOT));
+            value.addProperty("name", entry.name());
+            value.addProperty("overlap", entry.overlap());
+            value.addProperty("x", entry.centerX()); value.addProperty("z", entry.centerZ());
+            value.addProperty("radius_x", entry.xDivisor()); value.addProperty("radius_z", entry.zDivisor());
+            value.addProperty("rotation", entry.rotationDegrees()); value.addProperty("shape_power", entry.shapePower());
+            value.addProperty("multiplier", entry.multiplier()); value.addProperty("roughness", entry.noiseStrength());
+            value.addProperty("shore_width", entry.edgeWidth());
+            value.addProperty("temperature", entry.temperature().name().toLowerCase(java.util.Locale.ROOT));
+            value.addProperty("biome_patch_size", entry.biomePatchSize());
+            value.add("exclude_biomes", GSON.toJsonTree(entry.excludedBiomes()));
+            JsonObject noise = new JsonObject(); noise.addProperty("seed", entry.noise().seed());
+            noise.addProperty("first_octave", entry.noise().firstOctave()); noise.addProperty("scale", entry.noise().scale());
+            noise.add("amplitudes", GSON.toJsonTree(entry.noise().amplitudes())); value.add("noise", noise);
+            if (entry.type() == IslandEntryType.ARCHIPELAGO) {
+                value.addProperty("count", entry.count()); value.addProperty("min_radius", entry.minRadius());
+                value.addProperty("max_radius", entry.maxRadius()); value.addProperty("spread", entry.spread());
+                value.addProperty("spacing", entry.spacing()); value.addProperty("min_stretch", entry.minStretch());
+                value.addProperty("max_stretch", entry.maxStretch()); value.addProperty("min_shape_power", entry.minShapePower());
+                value.addProperty("max_shape_power", entry.maxShapePower());
+            }
+            entries.add(value);
+        }
+        root.add("entries", entries);
+        return root;
     }
 
     private static List<String> parseBiomeSelectors(JsonArray array, String path) throws IslandConfigException {
@@ -499,6 +550,9 @@ public final class IslandConfigLoader {
         if (value != Math.rint(value)) {
             throw new IslandConfigException(path + "." + key + " must be an integer");
         }
+        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            throw new IslandConfigException(path + "." + key + " must fit a Java int");
+        }
         return (int) value;
     }
 
@@ -510,6 +564,9 @@ public final class IslandConfigLoader {
         double value = requireDouble(object, key, path);
         if (value != Math.rint(value)) {
             throw new IslandConfigException(path + "." + key + " must be an integer");
+        }
+        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            throw new IslandConfigException(path + "." + key + " must fit a Java int");
         }
         return (int) value;
     }

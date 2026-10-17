@@ -1,13 +1,12 @@
 package org.wodichka.worldgen_editor.neoforge;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.wodichka.worldgen_editor.Worldgen_editor;
 import org.wodichka.worldgen_editor.command.WorldgenEditorCommands;
@@ -20,9 +19,20 @@ import org.wodichka.worldgen_editor.world.IslandWorldState;
 public final class Worldgen_editorNeoForge {
     public Worldgen_editorNeoForge(IEventBus modEventBus) {
         modEventBus.addListener(this::registerRegistries);
+        if (Boolean.getBoolean("wge.terrablenderVerification")) {
+            try { Class.forName("org.wodichka.worldgen_editor.verification.TerraBlenderVerification").getMethod("register").invoke(null); }
+            catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
+        }
+        if (Boolean.getBoolean("wge.verification")) {
+            modEventBus.addListener((net.neoforged.neoforge.event.RegisterGameTestsEvent event) -> {
+                try { event.register(Class.forName("org.wodichka.worldgen_editor.verification.GenerationGameTests")); }
+                catch (ClassNotFoundException error) { throw new IllegalStateException(error); }
+            });
+        }
         Worldgen_editor.init();
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
-        NeoForge.EVENT_BUS.addListener(this::levelLoad);
+        NeoForge.EVENT_BUS.addListener(this::serverStarting);
+        NeoForge.EVENT_BUS.addListener(this::serverStopped);
     }
 
     private void registerRegistries(RegisterEvent event) {
@@ -35,9 +45,12 @@ public final class Worldgen_editorNeoForge {
         WorldgenEditorCommands.register(event.getDispatcher());
     }
 
-    private void levelLoad(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) {
-            IslandWorldState.loadForServer(level.getServer());
-        }
+    private void serverStarting(ServerAboutToStartEvent event) {
+        IslandWorldState.prepareForServer(event.getServer());
+        TerraBlenderCompatibility.initialize(event.getServer());
+    }
+
+    private void serverStopped(ServerStoppedEvent event) {
+        IslandWorldState.clear();
     }
 }

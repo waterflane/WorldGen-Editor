@@ -14,3 +14,10 @@ tasks.register('runConfigTests', JavaExec) {
 }
 
 check.dependsOn runConfigTests
+
+tasks.register('runStateTests', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.wodichka.worldgen_editor.config.WorldSnapshotStoreTest'
+}
+check.dependsOn runStateTests
