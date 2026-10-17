@@ -16,20 +16,14 @@ logoFile = "worldgen_editor_icon.png"
 [[dependencies.worldgen_editor]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21,)"
+versionRange = "[21.1.230,21.2)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.worldgen_editor]]
 modId = "minecraft"
 type = "required"
-versionRange = "[1.21.1,)"
+versionRange = "[1.21.1]"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.worldgen_editor]]
-modId = "architectury"
-type = "required"
-versionRange = "[13.0.8,)"
-ordering = "AFTER"
-side = "BOTH"
