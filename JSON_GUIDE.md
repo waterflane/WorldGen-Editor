@@ -9,7 +9,9 @@ WGE: Islands
 Inside this preset, Minecraft still uses the normal `minecraft:noise` generator, but with two modded worldgen resources:
 
 - `worldgen_editor:island_biome_source` selects ocean and land biomes before chunk generation.
-- `worldgen_editor:island_final_density` softly reshapes vanilla density so oceans form around configured islands.
+- `worldgen_editor:island_continents` adjusts continentalness using the configured island mask.
+
+The `island_final_density` codec is retained only for old data. Current presets do not connect it to the noise router.
 
 This is much more stable than replacing generator internals after the vanilla generator has already been created.
 
@@ -46,7 +48,9 @@ Bundled presets and matching world types:
 
 If the files do not exist, the mod creates defaults. New installs use `worldgen_editor.json` and `presets/*.json`; `continents.json` is only a legacy fallback for old configs where the new main config is not present.
 
-Preset priority is:
+For an existing world, its pinned snapshot at `<world>/worldgen_editor/worldgen_editor.json` takes priority. The snapshot stores the effective configuration, preset, enable flag and `generation_version`. A restart keeps this snapshot until an explicit `reload` or `preset` command imports global changes.
+
+When first creating a snapshot, preset priority is:
 
 ```text
 world type preset > config active_preset > legacy continents.json
@@ -57,7 +61,7 @@ For example, a world created with `WGE: Archipelago` uses `config/worldgen_edito
 The selected preset is read:
 
 - once when the mod initializes, so a default file can be created early;
-- again when a world/server starts, before the island mask is rebuilt for that world's seed;
+- when a world/server first starts without a pinned snapshot, before any noise or biome caches are built;
 - again when `/worldgen_editor reload` is used.
 
 This means you can edit `worldgen_editor.json` or a preset JSON from the main menu and then create a new world without restarting the game.
@@ -69,6 +73,8 @@ After editing the config while a world is already running, use:
 ```
 
 `reload` only affects newly generated chunks. Minecraft does not rebuild already generated chunks, biomes, structures, or blocks.
+
+Existing worlds without a generation version use version 1. New WGE world types select version 2. `/worldgen_editor migrate` explicitly enables the corrected biome rules for future chunks; it does not rewrite existing chunks. Failed reloads leave the previous snapshot active.
 
 ## Enabling
 
