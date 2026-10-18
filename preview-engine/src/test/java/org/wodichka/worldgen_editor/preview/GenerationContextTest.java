@@ -50,6 +50,22 @@ public final class GenerationContextTest {
             int expected=first.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,first.random())-1;
             check(first.surfaceY(x,z)==expected,"batched surface sampler differs from Minecraft at "+x+","+z);
         }
+        var parallelWorld=new PreviewWorld(input,0,2);
+        var expectedHeights=new int[64];var expectedBiomes=new String[64];
+        for(int i=0;i<64;i++){
+            int x=-384+(i%8)*128,z=-384+(i/8)*128;
+            expectedHeights[i]=first.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,first.random())-1;
+            expectedBiomes[i]=first.biomeId(x,expectedHeights[i],z);
+        }
+        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(4)){
+            var jobs=new java.util.ArrayList<java.util.concurrent.Future<?>>();
+            for(int i=0;i<256;i++){final int index=i%64;jobs.add(pool.submit(()->{
+                int x=-384+(index%8)*128,z=-384+(index/8)*128,y=parallelWorld.surfaceY(x,z,32);
+                check(y==expectedHeights[index],"parallel height sampling changed the result");
+                check(parallelWorld.biomeId(x,y,z).equals(expectedBiomes[index]),"parallel biome cache changed the result");
+            }));}
+            for(var job:jobs)job.get();
+        }
         var disabled=input.deepCopy();disabled.addProperty("enabled",false);var vanilla=new PreviewWorld(disabled,0,2);
         check(vanilla.context().mask().isEmpty(),"disabled generation must delegate to vanilla");
         var empty=input.deepCopy();empty.add("entries",new JsonArray());check(new PreviewWorld(empty,0,2).context().mask().isEmpty(),"empty config must delegate");

@@ -112,6 +112,7 @@ Tiles at overview zoom sample a grid; zoom in to one-block sampling for detailed
 World snapshots can be opened directly in the preview to retain their generation version. Enter that world's numeric `/seed` value as well.
 
 With the preview running, `python tools/benchmark_preview.py` measures a coarse tile, a cached tile, a dense tile and cooperative HTTP cancellation. It also rejects invalid algorithm versions. `tools/verification-results.json` records the development-machine measurements and world comparisons; timings depend on hardware and cache state. Add `?profile=1` to the map URL to report UI tasks over 50 ms in the browser console.
+`python tools/benchmark_zoom.py` compares a batch of 16 surface tiles against fixed-height tiles using independent cold caches. It reports a hash of the surface heights and biome IDs, allowing performance changes to be checked without accepting different results. The engine processes up to four tiles concurrently within its existing 512 MiB heap limit.
 
 The browser-only island-mask mode remains available by opening `index.html`, without Java. Its colors describe the mask, not final Minecraft terrain.
 

@@ -103,8 +103,12 @@ public final class PreviewWorld {
                 original.isAquifersEnabled(), original.oreVeinsEnabled(), original.useLegacyRandomSource());
         generator = new NoiseBasedChunkGenerator(source, Holder.direct(settings));
         random = RandomState.create(settings, access.lookupOrThrow(Registries.NOISE), seed);
-        biomes = new BiomeManager((x,y,z) -> noiseBiomeCache.computeIfAbsent(BlockPos.asLong(x,y,z),
-                ignored -> source.getNoiseBiome(x,y,z,random.sampler())), BiomeManager.obfuscateSeed(seed));
+        biomes = new BiomeManager((x,y,z) -> {
+            long key=BlockPos.asLong(x,y,z);
+            synchronized(noiseBiomeCache){var cached=noiseBiomeCache.get(key);if(cached!=null)return cached;}
+            var result=source.getNoiseBiome(x,y,z,random.sampler());
+            synchronized(noiseBiomeCache){noiseBiomeCache.put(key,result);}return result;
+        }, BiomeManager.obfuscateSeed(seed));
         height = LevelHeightAccessor.create(settings.noiseSettings().minY(), settings.noiseSettings().height());
     }
 
@@ -112,17 +116,19 @@ public final class PreviewWorld {
 
     public int surfaceY(int x,int z) { return surfaceY(x,z,1); }
     public int surfaceY(int x,int z,int sampleStep) {
-        long key=((long)x<<32)^(z&0xffffffffL);Integer cached=heightCache.get(key);
-        if(cached!=null)return cached;
+        long key=((long)x<<32)^(z&0xffffffffL);
+        synchronized(heightCache){Integer cached=heightCache.get(key);if(cached!=null)return cached;}
         var settings=generator.generatorSettings().value();int width=settings.noiseSettings().getCellWidth();
         if(sampleStep>=width){
             int y=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,height,random)-1;
-            heightCache.put(key,y);return y;
+            synchronized(heightCache){heightCache.put(key,y);}return y;
         }
         int cellX=Math.floorDiv(x,width)*width,cellZ=Math.floorDiv(z,width)*width;
         int[] heights=SurfaceSampler.heights(random,cellX,cellZ,settings);
-        for(int dz=0;dz<width;dz++)for(int dx=0;dx<width;dx++)heightCache.put(((long)(cellX+dx)<<32)^((cellZ+dz)&0xffffffffL),heights[dz*width+dx]);
-        return heightCache.get(key);
+        synchronized(heightCache){
+            for(int dz=0;dz<width;dz++)for(int dx=0;dx<width;dx++)heightCache.put(((long)(cellX+dx)<<32)^((cellZ+dz)&0xffffffffL),heights[dz*width+dx]);
+        }
+        return heights[(z-cellZ)*width+x-cellX];
     }
     public Holder<Biome> biome(int x, int y, int z) { return biomes.getBiome(new BlockPos(x,y,z)); }
     public String biomeId(int x,int y,int z) { return biome(x,y,z).unwrapKey().orElseThrow().location().toString(); }

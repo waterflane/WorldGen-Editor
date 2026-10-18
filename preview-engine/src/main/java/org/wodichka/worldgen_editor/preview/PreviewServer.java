@@ -17,6 +17,8 @@ public final class PreviewServer {
     private static final Gson JSON = new Gson();
     private static final Map<String, Session> SESSIONS = new LinkedHashMap<>(4,.75f,true);
     private static String RESOURCES;
+    private static final int WORKERS=Math.max(1,Math.min(4,Runtime.getRuntime().availableProcessors()-1));
+    private static final Semaphore GENERATION_SLOTS=new Semaphore(WORKERS,true);
     private record Session(PreviewWorld world, ConcurrentMap<String, AtomicLong> clients, Map<String, JsonObject> tiles) {}
 
     public static void main(String[] args) throws Exception {
@@ -30,6 +32,7 @@ public final class PreviewServer {
         server.createContext("/api/info", exchange -> handle(exchange, () -> {
             JsonObject value = new JsonObject(); value.addProperty("protocol",1);value.addProperty("minecraft","1.21.1");
             value.addProperty("generation_version",2);value.addProperty("resources",RESOURCES);
+            value.addProperty("workers",WORKERS);
             value.addProperty("heap_used_mib",(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1048576);return value;
         }));
         server.createContext("/api/session", exchange -> handle(exchange, () -> session(read(exchange))));
@@ -93,9 +96,13 @@ public final class PreviewServer {
         boolean surface="surface".equals(request.get("height_mode").getAsString());
         int fixedY=surface ? 0 : integer(request,"y",-64,319);
         String key=x+":"+z+":"+step+":"+size+":"+surface+":"+fixedY;
-        synchronized(session) {
+        if(serial!=latest.get())throw new CancellationException();
+        synchronized(session){JsonObject cached=session.tiles.get(key);if(cached!=null)return cached;}
+        boolean acquired=false;
+        try {
+            while(!(acquired=GENERATION_SLOTS.tryAcquire(25,TimeUnit.MILLISECONDS))){if(serial!=latest.get())throw new CancellationException();}
             if(serial!=latest.get())throw new CancellationException();
-            JsonObject cached=session.tiles.get(key);if(cached!=null)return cached;
+            synchronized(session){JsonObject cached=session.tiles.get(key);if(cached!=null)return cached;}
             long started=System.nanoTime();var palette=new ArrayList<String>();var indices=new int[size*size];var heights=new int[size*size];
             for(int row=0;row<size;row++) {
                 for(int col=0;col<size;col++) {
@@ -108,8 +115,10 @@ public final class PreviewServer {
             }
             JsonObject value=new JsonObject();value.add("palette",JSON.toJsonTree(palette));value.add("biomes",JSON.toJsonTree(indices));
             value.add("heights",JSON.toJsonTree(heights));value.addProperty("elapsed_ms",(System.nanoTime()-started)/1000000);
-            session.tiles.put(key,value);return value;
-        }
+            if(serial!=latest.get())throw new CancellationException();
+            synchronized(session){session.tiles.put(key,value);}return value;
+        } catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new CancellationException();}
+        finally {if(acquired)GENERATION_SLOTS.release();}
     }
 
     private static int integer(JsonObject request,String key,int min,int max) {

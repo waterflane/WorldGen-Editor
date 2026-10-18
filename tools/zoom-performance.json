@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-18",
+  "scenario": "16 tiles, 8x8 samples each, step 32, seed 987654321; independent cold caches for surface and slice; 4 concurrent HTTP requests",
+  "before": {
+    "surface_16_tiles_ms": 2547.75,
+    "points_sha256": "c82cf78b46e3088b619626ea3433669b2e79da7aac6c9c8388e7fc20639a9bde",
+    "slice_16_tiles_ms": 32.11
+  },
+  "after": {
+    "surface_16_tiles_ms": 805.64,
+    "points_sha256": "c82cf78b46e3088b619626ea3433669b2e79da7aac6c9c8388e7fc20639a9bde",
+    "slice_16_tiles_ms": 30.28
+  },
+  "surface_speedup": 3.16,
+  "parallel_sampling_checks": 256,
+  "real_world": {
+    "biome_samples": 113,
+    "height_samples": 24,
+    "mismatches": 0,
+    "river": "minecraft:river",
+    "underground": "minecraft:lush_caves",
+    "shore_mask": 0.4936867240919682
+  },
+  "notes": "Local machine measurements. Exact heights and biome IDs are unchanged; no approximation or WebAssembly port was introduced.",
+  "node_tests_passed": 13,
+  "browser": {
+    "cached_fine_pass_ms": 161,
+    "ui_longtasks_over_50ms": 0,
+    "loaded_terrain_retained_when_zooming_out": true
+  }
+}
