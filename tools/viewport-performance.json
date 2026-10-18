@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-18",
+  "environment": "Windows, Corretto 22.0.2, 12 logical processors, max Java heap 512 MiB",
+  "scenario": "default.json, seed 874321098, 850x720 CSS viewport, Balanced, 6.27 blocks/pixel, x=-13.11 z=113.11; complete coarse and detailed worker/API pipeline",
+  "before": {
+    "first_tile_ms": 237.63,
+    "first_visible_frame_ms": 830.59,
+    "full_view_ms": 20524.78,
+    "cached_view_ms": 95.30,
+    "tile_requests": 434,
+    "tile_wall_p50_ms": 184.36,
+    "tile_wall_p95_ms": 212.31,
+    "workers": 4
+  },
+  "after": {
+    "first_tile_ms": 723.98,
+    "first_visible_frame_ms": 747.72,
+    "coarse_complete_ms": 1128.88,
+    "full_view_ms": 12987.47,
+    "cached_view_ms": 111.46,
+    "cached_requests": 0,
+    "tile_requests": 434,
+    "tile_wall_p50_ms": 166.10,
+    "tile_wall_p95_ms": 197.41,
+    "tile_wall_max_ms": 526.47,
+    "workers": 6
+  },
+  "biome_height_sha256_before_and_after": "086a3ef7c06cdab186f5c8c531b2fc0b4c3a3fda8bfeb46f981118f5aa6f8ce9",
+  "full_view_speedup": 1.58,
+  "browser": {
+    "scenario": "User default archipelago example, seed 0, Balanced, same viewport; fresh page and uncached session in the already running JVM",
+    "first_received_frame_ms": 425,
+    "full_view_ms": 13681,
+    "cached_view_ms": 153,
+    "observed_ui_longtasks_over_50ms": 0
+  },
+  "checks": {
+    "node_tests": 14,
+    "additional_multi_preset_surface_columns": 576,
+    "legacy_biome_cases": 576,
+    "real_neoforge_biomes": 113,
+    "real_neoforge_heights": 24,
+    "real_neoforge_mismatches": 0,
+    "cancellation_ms": 3.23
+  },
+  "memory": {
+    "heap_used_mib_after_checks": 220,
+    "process_working_set_bytes": 443691008,
+    "process_peak_working_set_bytes": 488644608
+  },
+  "notes": [
+    "The earlier 16-tile API benchmark did not represent a complete map. This viewport required 434 tile requests, not one Minecraft chunk.",
+    "CLI runs exclude Java process startup and browser presentation. Before used an already warm JVM; after was the first viewport in a fresh JVM after readiness, so first-tile warmup conditions differ. Startup after the change was 4.64 seconds.",
+    "Browser metrics start when a render is sent to the worker and include both passes and communication. The HUD no longer reports only the refinement pass.",
+    "Resolution, sampling grid and generated values are unchanged. Exact surface completion still takes seconds; this is not a sub-second full-map result."
+  ]
+}

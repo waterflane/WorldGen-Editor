@@ -120,7 +120,8 @@ public final class PreviewWorld {
         synchronized(heightCache){Integer cached=heightCache.get(key);if(cached!=null)return cached;}
         var settings=generator.generatorSettings().value();int width=settings.noiseSettings().getCellWidth();
         if(sampleStep>=width){
-            int y=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,height,random)-1;
+            int y=SurfaceSampler.height(random,x,z,settings);
+            if(y==Integer.MIN_VALUE)y=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,height,random)-1;
             synchronized(heightCache){heightCache.put(key,y);}return y;
         }
         int cellX=Math.floorDiv(x,width)*width,cellZ=Math.floorDiv(z,width)*width;

@@ -17,7 +17,7 @@ public final class PreviewServer {
     private static final Gson JSON = new Gson();
     private static final Map<String, Session> SESSIONS = new LinkedHashMap<>(4,.75f,true);
     private static String RESOURCES;
-    private static final int WORKERS=Math.max(1,Math.min(4,Runtime.getRuntime().availableProcessors()-1));
+    private static final int WORKERS=Math.max(1,Math.min(6,Runtime.getRuntime().availableProcessors()-2));
     private static final Semaphore GENERATION_SLOTS=new Semaphore(WORKERS,true);
     private record Session(PreviewWorld world, ConcurrentMap<String, AtomicLong> clients, Map<String, JsonObject> tiles) {}
 
@@ -79,6 +79,7 @@ public final class PreviewServer {
         }
         JsonObject value=new JsonObject();value.addProperty("session",id);value.addProperty("seed",Long.toString(seed));
         value.addProperty("resources",RESOURCES);value.addProperty("generation_version",version);
+        value.addProperty("workers",WORKERS);
         String client=request.has("client")?request.get("client").getAsString():"default";
         value.addProperty("request_base",SESSIONS.get(id).clients.computeIfAbsent(client,ignored->new AtomicLong()).get());return value;
     }

@@ -51,13 +51,18 @@ public final class GenerationContextTest {
             check(first.surfaceY(x,z)==expected,"batched surface sampler differs from Minecraft at "+x+","+z);
         }
         var parallelWorld=new PreviewWorld(input,0,2);
+        for(int i=0;i<64;i++){
+            int x=-383+(i%8)*127,z=-381+(i/8)*125;
+            int expected=first.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,first.random())-1;
+            check(parallelWorld.surfaceY(x,z,32)==expected,"sparse surface sampler differs at nonaligned column "+x+","+z);
+        }
         var expectedHeights=new int[64];var expectedBiomes=new String[64];
         for(int i=0;i<64;i++){
             int x=-384+(i%8)*128,z=-384+(i/8)*128;
             expectedHeights[i]=first.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,first.random())-1;
             expectedBiomes[i]=first.biomeId(x,expectedHeights[i],z);
         }
-        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(4)){
+        try(var pool=java.util.concurrent.Executors.newFixedThreadPool(6)){
             var jobs=new java.util.ArrayList<java.util.concurrent.Future<?>>();
             for(int i=0;i<256;i++){final int index=i%64;jobs.add(pool.submit(()->{
                 int x=-384+(index%8)*128,z=-384+(index/8)*128,y=parallelWorld.surfaceY(x,z,32);
@@ -67,6 +72,22 @@ public final class GenerationContextTest {
             for(var job:jobs)job.get();
         }
         var disabled=input.deepCopy();disabled.addProperty("enabled",false);var vanilla=new PreviewWorld(disabled,0,2);
+        int surfaceChecks=0;
+        for(String preset:new String[]{"default","archipelago","small_island"}){
+            JsonElement layout;
+            try(var stream=GenerationContextTest.class.getResourceAsStream("/assets/worldgen_editor/presets/"+preset+".json")){
+                layout=JsonParser.parseReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));
+            }
+            for(long seed:new long[]{0,12345,Long.MIN_VALUE}){
+                var candidate=new PreviewWorld(layout,seed,2);
+                for(int i=0;i<64;i++){
+                    int x=-1791+(i%8)*511,z=-1789+(i/8)*509;
+                    int expected=candidate.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,candidate.random())-1;
+                    check(candidate.surfaceY(x,z,32)==expected,"upper-band surface differs for "+preset+" seed "+seed+" at "+x+","+z);
+                    surfaceChecks++;
+                }
+            }
+        }
         check(vanilla.context().mask().isEmpty(),"disabled generation must delegate to vanilla");
         var empty=input.deepCopy();empty.add("entries",new JsonArray());check(new PreviewWorld(empty,0,2).context().mask().isEmpty(),"empty config must delegate");
         try(var inputStream=GenerationContextTest.class.getResourceAsStream("/legacy-biomes.json")) {
@@ -83,6 +104,6 @@ public final class GenerationContextTest {
                 check(sea.unwrapKey().orElseThrow().location().toString().equals(row.get("ocean").getAsString()),"legacy ocean biome changed");
             }
         }
-        System.out.println("Generation context checks and 576 legacy biome cases passed");
+        System.out.println("Generation context checks, 576 legacy biome cases and "+surfaceChecks+" multi-preset surface columns passed");
     }
 }
