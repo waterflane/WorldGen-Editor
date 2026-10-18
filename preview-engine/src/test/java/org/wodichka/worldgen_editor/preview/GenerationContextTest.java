@@ -84,11 +84,24 @@ public final class GenerationContextTest {
                     int x=-1791+(i%8)*511,z=-1789+(i/8)*509;
                     int expected=candidate.generator().getBaseHeight(x,z,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,candidate.random())-1;
                     check(candidate.surfaceY(x,z,32)==expected,"upper-band surface differs for "+preset+" seed "+seed+" at "+x+","+z);
+                    String independent=candidate.heightIndependentBiomeId(x,z);
+                    if(independent!=null)for(int y:new int[]{-64,-33,0,48,63,64,96,128,192,255,300,319})
+                        check(independent.equals(candidate.biomeId(x,y,z)),"height-independent biome differs for "+preset+" at "+x+","+y+","+z);
                     surfaceChecks++;
                 }
             }
         }
         check(vanilla.context().mask().isEmpty(),"disabled generation must delegate to vanilla");
+        check(vanilla.heightIndependentBiomeId(9000,9000)==null,"disabled generation must not skip vanilla heights");
+        for(int version:new int[]{1,2})for(String temperature:new String[]{"standard","cold","warm","temperate"}){
+            var layout=JsonParser.parseString("{\"outer_ocean\":\"minecraft:warm_ocean\",\"entries\":[{\"type\":\"ocean\",\"x\":0,\"z\":0,\"radius\":400,\"temperature\":\""+temperature+"\"}]}");
+            var oceanWorld=new PreviewWorld(layout,Long.MIN_VALUE,version);
+            for(int x:new int[]{-513,-399,-3,0,2,3,399,513})for(int z:new int[]{-2,0,3,513}){
+                String independent=oceanWorld.heightIndependentBiomeId(x,z);
+                if(independent!=null)for(int y=-64;y<=319;y++)
+                    check(independent.equals(oceanWorld.biomeId(x,y,z)),"constant ocean or Voronoi proof failed at "+x+","+y+","+z);
+            }
+        }
         var empty=input.deepCopy();empty.add("entries",new JsonArray());check(new PreviewWorld(empty,0,2).context().mask().isEmpty(),"empty config must delegate");
         try(var inputStream=GenerationContextTest.class.getResourceAsStream("/legacy-biomes.json")) {
             var cases=JsonParser.parseReader(new java.io.InputStreamReader(inputStream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonArray();

@@ -28,6 +28,7 @@ public final class PreviewWorld {
     private final BiomeManager biomes;
     private final LevelHeightAccessor height;
     private final GenerationContext context;
+    private final java.util.concurrent.ConcurrentLinkedQueue<ColumnSurfaceSampler> columnSamplers=new java.util.concurrent.ConcurrentLinkedQueue<>();
     private final Map<Long, Integer> heightCache = new LinkedHashMap<>(4096, .75f, true) {
         protected boolean removeEldestEntry(Map.Entry<Long, Integer> entry) { return size() > 131072; }
     };
@@ -120,12 +121,25 @@ public final class PreviewWorld {
         synchronized(heightCache){Integer cached=heightCache.get(key);if(cached!=null)return cached;}
         var settings=generator.generatorSettings().value();int width=settings.noiseSettings().getCellWidth();
         if(sampleStep>=width){
-            int y=SurfaceSampler.height(random,x,z,settings);
-            if(y==Integer.MIN_VALUE)y=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,height,random)-1;
+            int y;
+            if(!Boolean.getBoolean("wge.preview.referenceSampler")){
+                var sampler=columnSamplers.poll();
+                if(sampler==null)sampler=new ColumnSurfaceSampler(random,settings);
+                try{y=sampler.height(x,z);}finally{if(columnSamplers.size()<6)columnSamplers.offer(sampler);}
+            }else{
+                y=SurfaceSampler.height(random,x,z,settings);
+                if(y==Integer.MIN_VALUE)y=generator.getBaseHeight(x,z,Heightmap.Types.WORLD_SURFACE_WG,height,random)-1;
+            }
             synchronized(heightCache){heightCache.put(key,y);}return y;
         }
         int cellX=Math.floorDiv(x,width)*width,cellZ=Math.floorDiv(z,width)*width;
-        int[] heights=SurfaceSampler.heights(random,cellX,cellZ,settings);
+        int[] heights;
+        if(Boolean.getBoolean("wge.preview.referenceSampler"))heights=SurfaceSampler.heights(random,cellX,cellZ,settings);
+        else{
+            var sampler=columnSamplers.poll();
+            if(sampler==null)sampler=new ColumnSurfaceSampler(random,settings);
+            try{heights=sampler.heights(cellX,cellZ);}finally{if(columnSamplers.size()<6)columnSamplers.offer(sampler);}
+        }
         synchronized(heightCache){
             for(int dz=0;dz<width;dz++)for(int dx=0;dx<width;dx++)heightCache.put(((long)(cellX+dx)<<32)^((cellZ+dz)&0xffffffffL),heights[dz*width+dx]);
         }
@@ -133,6 +147,19 @@ public final class PreviewWorld {
     }
     public Holder<Biome> biome(int x, int y, int z) { return biomes.getBiome(new BlockPos(x,y,z)); }
     public String biomeId(int x,int y,int z) { return biome(x,y,z).unwrapKey().orElseThrow().location().toString(); }
+    public String heightIndependentBiomeId(int x,int z) {
+        var source=(IslandBiomeSource)generator.getBiomeSource();
+        // BiomeManager can choose either X/Z quart corner as Y changes. Only skip
+        // height calculation if all four candidates have the same proven constant biome.
+        int qx=Math.floorDiv(x-2,4),qz=Math.floorDiv(z-2,4);
+        Holder<Biome> result=null;
+        for(int dz=0;dz<2;dz++)for(int dx=0;dx<2;dx++){
+            var candidate=source.heightIndependentBiome(qx+dx,qz+dz);
+            if(candidate==null || result!=null && !result.equals(candidate))return null;
+            result=candidate;
+        }
+        return result.unwrapKey().orElseThrow().location().toString();
+    }
     public GenerationContext context() { return context; }
     public NoiseBasedChunkGenerator generator() { return generator; }
     public RandomState random() { return random; }

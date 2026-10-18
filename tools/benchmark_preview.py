@@ -39,6 +39,9 @@ query = {'session': session['session'], 'client': client, 'request': session['re
          'x': 9000, 'z': 9000, 'size': 8, 'step': 256, 'height_mode': 'surface'}
 first_ms, status, tile = measured('tile', query)
 assert status == 200, tile
+for invalid in ['false', 0, None]:
+    invalid_status, error = post('tile', dict(query, include_heights=invalid))
+    assert invalid_status == 400 and 'include_heights' in error['error'], error
 repeat_ms, status, _ = measured('tile', query)
 assert status == 200
 dense_ms, status, dense = measured('tile', dict(query, x=520, z=-28, size=32, step=1))

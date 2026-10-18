@@ -38,6 +38,15 @@ public final class GenerationGameTests {
         helper.assertTrue(expected.equals(actual),"Biome mismatch at "+x+","+y+","+z+": "+actual+" != "+expected);
         return actual;
     }
+    private static void compareFastSurface(GameTestHelper helper,String session,int x,int surface,int z)throws Exception {
+        var request=query(session,x,0,z,"surface");request.addProperty("include_heights",false);
+        var tile=post("tile",request);
+        String expected=tile.getAsJsonArray("palette").get(tile.getAsJsonArray("biomes").get(0).getAsInt()).getAsString();
+        String actual=helper.getLevel().getBiome(new BlockPos(x,surface,z)).unwrapKey().orElseThrow().location().toString();
+        helper.assertTrue(expected.equals(actual),"Fast surface biome mismatch at "+x+","+surface+","+z);
+        int height=tile.getAsJsonArray("heights").get(0).getAsInt();
+        helper.assertTrue(height==Short.MIN_VALUE || height==surface,"Fast surface height must be exact or explicitly absent");
+    }
     @GameTest(template="empty",timeoutTicks=1200)
     public static void previewMatchesWorld(GameTestHelper helper) throws Exception {
         if(Boolean.getBoolean("wge.terrablenderVerification")) {
@@ -59,6 +68,7 @@ public final class GenerationGameTests {
             }
             var tile=post("tile",query(session,x,0,z,"surface"));
             helper.assertTrue(tile.getAsJsonArray("heights").get(0).getAsInt()==surface,"Base height mismatch");
+            compareFastSurface(helper,session,x,surface,z);
             heightChecks++;
         }
         // Fixed seed-zero oracle locations ensure these categories are actually present in the test.
@@ -72,10 +82,12 @@ public final class GenerationGameTests {
             int surface=generator.getBaseHeight(x,0,Heightmap.Types.WORLD_SURFACE_WG,level,level.getChunkSource().randomState())-1;
             var tile=post("tile",query(session,x,0,0,"surface"));
             helper.assertTrue(tile.getAsJsonArray("heights").get(0).getAsInt()==surface,"Shore base height mismatch");heightChecks++;
+            compareFastSurface(helper,session,x,surface,0);
             compareBiome(helper,session,x,surface,0);compareBiome(helper,session,x,300,0);compared+=2;
         }
         var result=new JsonObject();result.addProperty("biome_samples",compared);result.addProperty("height_samples",heightChecks);
         result.addProperty("mismatches",0);result.addProperty("river",river);result.addProperty("underground",cave);result.addProperty("shore_mask",edge);
+        result.addProperty("fast_surface_samples",heightChecks);
         Files.writeString(Path.of("parity-result.json"),result.toString());
         helper.succeed();
     }

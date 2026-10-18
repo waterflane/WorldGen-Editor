@@ -33,6 +33,7 @@ public final class PreviewServer {
             JsonObject value = new JsonObject(); value.addProperty("protocol",1);value.addProperty("minecraft","1.21.1");
             value.addProperty("generation_version",2);value.addProperty("resources",RESOURCES);
             value.addProperty("workers",WORKERS);
+            value.addProperty("sampling_engine",Boolean.getBoolean("wge.preview.referenceSampler")?"reference":"column");
             value.addProperty("heap_used_mib",(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1048576);return value;
         }));
         server.createContext("/api/session", exchange -> handle(exchange, () -> session(read(exchange))));
@@ -95,8 +96,11 @@ public final class PreviewServer {
         int step=integer(request,"step",1,4096),size=integer(request,"size",1,32);
         if((long)x+(long)(size-1)*step>30000000 || (long)z+(long)(size-1)*step>30000000)throw new IllegalArgumentException("Tile exceeds world bounds");
         boolean surface="surface".equals(request.get("height_mode").getAsString());
+        if(request.has("include_heights") && (!request.get("include_heights").isJsonPrimitive()
+                || !request.getAsJsonPrimitive("include_heights").isBoolean()))throw new IllegalArgumentException("include_heights must be a boolean");
+        boolean includeHeights=!request.has("include_heights") || request.get("include_heights").getAsBoolean();
         int fixedY=surface ? 0 : integer(request,"y",-64,319);
-        String key=x+":"+z+":"+step+":"+size+":"+surface+":"+fixedY;
+        String key=x+":"+z+":"+step+":"+size+":"+surface+":"+fixedY+":"+includeHeights;
         if(serial!=latest.get())throw new CancellationException();
         synchronized(session){JsonObject cached=session.tiles.get(key);if(cached!=null)return cached;}
         boolean acquired=false;
@@ -109,8 +113,9 @@ public final class PreviewServer {
                 for(int col=0;col<size;col++) {
                     if(serial!=latest.get())throw new CancellationException();
                     int bx=x+col*step,bz=z+row*step,i=row*size+col;
-                    int y=surface ? session.world.surfaceY(bx,bz,step) : fixedY;
-                    heights[i]=y;String id=session.world.biomeId(bx,y,bz);int index=palette.indexOf(id);
+                    String id=surface && !includeHeights ? session.world.heightIndependentBiomeId(bx,bz) : null;
+                    int y=id!=null ? Short.MIN_VALUE : surface ? session.world.surfaceY(bx,bz,step) : fixedY;
+                    heights[i]=y;if(id==null)id=session.world.biomeId(bx,y,bz);int index=palette.indexOf(id);
                     if(index<0){index=palette.size();palette.add(id);}indices[i]=index;
                 }
             }

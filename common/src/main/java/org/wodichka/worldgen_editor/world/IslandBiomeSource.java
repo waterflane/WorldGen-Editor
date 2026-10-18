@@ -61,6 +61,22 @@ public final class IslandBiomeSource extends BiomeSource {
     public GenerationBinding binding() { return binding; }
     public void bind(GenerationBinding value) { binding.attach(value); }
 
+    /** Returns a biome only if this column's WGE rule is independent of Y and the delegate. */
+    public Holder<Biome> heightIndependentBiome(int quartX,int quartZ) {
+        GenerationContext context=binding.get();
+        if(context==null || context.mask().isEmpty())return null;
+        int x=QuartPos.toBlock(quartX),z=QuartPos.toBlock(quartZ);
+        var sample=context.mask().sampleInfo(x,z);
+        if(sample.value()>=IslandTerrainHooks.FULL_OCEAN_MASK)return null;
+        if(sample.oceanSource()==null && sample.archipelagoSource()==null && sample.landSource()==null)
+            return context.biomeRules().outerOceanBiome();
+        var source=sample.oceanSource()!=null ? sample.oceanSource()
+                : sample.archipelagoSource()!=null ? sample.archipelagoSource() : sample.landSource();
+        if(source==null || source.temperature()==null || source.temperature()==org.wodichka.worldgen_editor.config.IslandTemperature.STANDARD)
+            return null;
+        return context.biomeRules().oceanBiome(sample.value(),source,null,x,z);
+    }
+
     @Override
     protected MapCodec<? extends BiomeSource> codec() {
         return CODEC;
