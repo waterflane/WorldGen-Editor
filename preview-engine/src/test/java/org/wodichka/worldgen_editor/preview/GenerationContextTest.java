@@ -43,6 +43,10 @@ public final class GenerationContextTest {
         owner.set(new GenerationContext(0,IslandConfigLoader.parse(outerInput),2,biomes));
         check(outerSource.possibleBiomes().contains(biomes.getHolderOrThrow(Biomes.DEEP_FROZEN_OCEAN)),"cached possible biomes must cover a new outer ocean");
         check(outerSource.getNoiseBiome(5000,75,5000,outerWorld.random().sampler()).is(Biomes.DEEP_FROZEN_OCEAN),"binding replacement must update biome rules");
+        outerInput.addProperty("outer_ocean","minecraft:soul_sand_valley");
+        owner.set(new GenerationContext(0,IslandConfigLoader.parse(outerInput),2,biomes));
+        check(outerSource.getNoiseBiome(5000,75,5000,outerWorld.random().sampler()).is(Biomes.DEEP_OCEAN),"invalid outer ocean must fall back to a registered ocean");
+        check(outerSource.possibleBiomes().contains(biomes.getHolderOrThrow(Biomes.DEEP_OCEAN)),"fallback ocean must remain possible after a reload");
         owner.set(null);
         check(before.equals(other.biomeId(256,300,0)),"clearing one binding must leave other contexts intact");
         var accessor=net.minecraft.world.level.LevelHeightAccessor.create(-64,384);
