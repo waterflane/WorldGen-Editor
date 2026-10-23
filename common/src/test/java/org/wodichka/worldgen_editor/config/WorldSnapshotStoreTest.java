@@ -18,7 +18,7 @@ public final class WorldSnapshotStoreTest {
         var migrated=new WorldSnapshotStore.Snapshot(true,"small_island",2,config);
         WorldSnapshotStore.save(state,migrated);
         check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->config).equals(migrated),"migration must persist");
-        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":3}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
+        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":4}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
             Files.writeString(state,invalid);
             try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid snapshot accepted");}
             catch(IslandConfigException expected){check(Files.readString(state).equals(invalid),"failed load rewrote the snapshot");}

@@ -30,8 +30,8 @@ public final class PreviewServer {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1",port),16);
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.createContext("/api/info", exchange -> handle(exchange, () -> {
-            JsonObject value = new JsonObject(); value.addProperty("protocol",1);value.addProperty("minecraft","1.21.1");
-            value.addProperty("generation_version",2);value.addProperty("resources",RESOURCES);
+            JsonObject value = new JsonObject(); value.addProperty("protocol",2);value.addProperty("minecraft","1.21.1");
+            value.addProperty("generation_version",3);value.add("supported_generation_versions",JsonParser.parseString("[1,2,3]"));value.add("capabilities",JsonParser.parseString("[\"painted_map_v1\",\"vanilla_wge_only\"]"));value.addProperty("resources",RESOURCES);
             value.addProperty("workers",WORKERS);
             value.addProperty("sampling_engine",Boolean.getBoolean("wge.preview.referenceSampler")?"reference":"column");
             value.addProperty("heap_used_mib",(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1048576);return value;
@@ -68,7 +68,7 @@ public final class PreviewServer {
         if(request.has("generation_version") && (!request.get("generation_version").isJsonPrimitive()
                 || !request.getAsJsonPrimitive("generation_version").isNumber()))
             throw new IllegalArgumentException("generation_version must be a number");
-        int version=request.has("generation_version") ? integer(request,"generation_version",1,2) : 2;
+        int version=request.has("generation_version") ? integer(request,"generation_version",1,3) : 2;
         JsonElement config=request.get("config");
         String id=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest((RESOURCES+":"+version+":"+seed+":"+config).getBytes(StandardCharsets.UTF_8)));
         if (!SESSIONS.containsKey(id)) {
@@ -135,7 +135,7 @@ public final class PreviewServer {
         if(!exchange.getRequestMethod().equals("POST"))throw new IllegalArgumentException("POST required");
         String origin=exchange.getRequestHeaders().getFirst("Origin");
         if(origin!=null && !origin.equals("http://"+exchange.getRequestHeaders().getFirst("Host")))throw new IllegalArgumentException("Same-origin requests required");
-        byte[] bytes=exchange.getRequestBody().readNBytes(1048577);if(bytes.length>1048576)throw new IllegalArgumentException("Configuration too large");
+        byte[] bytes=exchange.getRequestBody().readNBytes(33554433);if(bytes.length>33554432)throw new IllegalArgumentException("Configuration too large");
         return JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
     }
     private interface Action {JsonObject run() throws Exception;}

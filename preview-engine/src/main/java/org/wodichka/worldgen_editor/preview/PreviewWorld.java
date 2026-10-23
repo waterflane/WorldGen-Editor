@@ -48,6 +48,7 @@ public final class PreviewWorld {
             frozen.setBoolean(BuiltInRegistries.BIOME_SOURCE, false);
             frozen.setBoolean(BuiltInRegistries.DENSITY_FUNCTION_TYPE, false);
             IslandBiomeSource.register(); IslandContinentsFunction.register(); IslandDensityFunction.register();
+            Registry.register(BuiltInRegistries.DENSITY_FUNCTION_TYPE,IslandCoastFunction.ID,IslandCoastFunction.MAP_CODEC);
             BuiltInRegistries.BIOME_SOURCE.freeze(); BuiltInRegistries.DENSITY_FUNCTION_TYPE.freeze();
         } catch (ReflectiveOperationException failure) {
             throw new IllegalStateException("Unsupported Minecraft runtime; expected 1.21.1", failure);
@@ -73,7 +74,7 @@ public final class PreviewWorld {
                     digest.update(entry.getKey().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     try(var input=entry.getValue().open()){digest.update(input.readAllBytes());}
                 }
-                resourceFingerprint="minecraft-1.21.1-wge-2-"+HexFormat.of().formatHex(digest.digest());
+                resourceFingerprint="minecraft-1.21.1-wge-3-"+HexFormat.of().formatHex(digest.digest());
             } catch(Exception error){throw new IllegalStateException("Could not fingerprint worldgen resources",error);}
         }
         return registries;
@@ -93,10 +94,12 @@ public final class PreviewWorld {
         IslandBiomeSource source = (IslandBiomeSource) BiomeSource.CODEC.parse(ops, biomeJson).getOrThrow();
         source.bind(binding);
         NoiseGeneratorSettings original = access.registryOrThrow(Registries.NOISE_SETTINGS)
-                .get(ResourceLocation.fromNamespaceAndPath("worldgen_editor", "island_overworld"));
+                .get(version>=3?ResourceLocation.withDefaultNamespace("overworld"):ResourceLocation.fromNamespaceAndPath("worldgen_editor", "island_overworld"));
+        if(version>=3)original=IslandNoiseComposition.compose(original);
         NoiseRouter router = original.noiseRouter().mapAll(function -> {
             if (function instanceof IslandContinentsFunction island) return island.withBinding(binding);
             if (function instanceof IslandDensityFunction island) return island.withBinding(binding);
+            if (function instanceof IslandCoastFunction island) return island.withBinding(binding);
             return function;
         });
         NoiseGeneratorSettings settings = new NoiseGeneratorSettings(original.noiseSettings(), original.defaultBlock(), original.defaultFluid(),

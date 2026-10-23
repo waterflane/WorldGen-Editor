@@ -19,8 +19,10 @@ public final class IslandMask {
     private final List<CompiledIsland> landShapes;
     private final List<CompiledIsland> oceanShapes;
     private final List<CompiledParent> archipelagoParents;
+    private final org.wodichka.worldgen_editor.config.PaintedMap paintedMap;
 
     public IslandMask(IslandConfig config, long worldSeed) {
+        paintedMap=config.paintedMap();
         List<CompiledIsland> land = new ArrayList<>();
         List<CompiledIsland> ocean = new ArrayList<>();
         List<CompiledParent> parents = new ArrayList<>();
@@ -40,7 +42,7 @@ public final class IslandMask {
     }
 
     public boolean isEmpty() {
-        return landShapes.isEmpty() && oceanShapes.isEmpty() && archipelagoParents.isEmpty();
+        return paintedMap==null && landShapes.isEmpty() && oceanShapes.isEmpty() && archipelagoParents.isEmpty();
     }
 
     public double sample(double blockX, double blockZ) {
@@ -87,7 +89,11 @@ public final class IslandMask {
             }
         }
 
-        return new SampleInfo(clamp01(Math.min(land, 1.0D - ocean)), landSource, oceanSource, parentSource);
+        double base=clamp01(Math.min(land,1.0D-ocean));
+        double value=paintedMap==null?base:paintedMap.apply(base,blockX,blockZ);
+        if(value>base && landSource==null && parentSource==null)
+            landSource=new SourceInfo("Painted land",IslandEntryType.ISLAND,null,0L,List.of(),IslandTemperature.STANDARD,512);
+        return new SampleInfo(value,landSource,oceanSource,parentSource);
     }
 
     public record SourceInfo(String name, IslandEntryType type, String parentName, long climateSeed, List<String> excludedBiomes,

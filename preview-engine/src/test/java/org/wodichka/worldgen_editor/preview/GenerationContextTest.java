@@ -107,6 +107,20 @@ public final class GenerationContextTest {
             }
         }
         var empty=input.deepCopy();empty.add("entries",new JsonArray());check(new PreviewWorld(empty,0,2).context().mask().isEmpty(),"empty config must delegate");
+        var painted=empty.deepCopy();painted.add("painted_map",JsonParser.parseString("{\"version\":1,\"step\":4,\"size\":64,\"tiles\":[]}"));
+        var custom=new PreviewWorld(painted,0,3);
+        check(!custom.context().mask().isEmpty(),"empty painted canvas must be an ocean");
+        check(custom.generator().generatorSettings().value().noiseRouter().finalDensity() instanceof IslandCoastFunction,"v3 must compose actual terrain density");
+        for(int x:new int[]{-257,-1,0,255,1024}){
+            int expected=custom.generator().getBaseHeight(x,0,net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,accessor,custom.random())-1;
+            check(custom.surfaceY(x,0,32)==expected,"v3 compiled sampler differs from Minecraft");
+            check(custom.biomeId(x,300,0).equals("minecraft:deep_ocean"),"empty painted canvas selected land");
+        }
+        painted.addProperty("enabled",false);
+        var disabledV3=new PreviewWorld(painted,0,3);
+        check(disabledV3.context().mask().isEmpty(),"disabling v3 must disable painted mask");
+        for(int x:new int[]{-257,-1,0,255,1024})check(disabledV3.surfaceY(x,0,32)==vanilla.surfaceY(x,0,32),"disabled v3 changed vanilla terrain");
+        try{new PreviewWorld(painted,0,2);throw new AssertionError("old generation accepted a painted map");}catch(IllegalArgumentException expected){}
         try(var inputStream=GenerationContextTest.class.getResourceAsStream("/legacy-biomes.json")) {
             var cases=JsonParser.parseReader(new java.io.InputStreamReader(inputStream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonArray();
             for(var item:cases){

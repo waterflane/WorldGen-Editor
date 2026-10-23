@@ -13,6 +13,9 @@ JSON-driven Overworld island generation for modded Minecraft.
 '''
 logoFile = "worldgen_editor_icon.png"
 
+[[mixins]]
+config = "worldgen_editor.mixins.json"
+
 [[dependencies.worldgen_editor]]
 modId = "neoforge"
 type = "required"

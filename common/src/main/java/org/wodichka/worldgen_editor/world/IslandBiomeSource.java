@@ -24,7 +24,7 @@ public final class IslandBiomeSource extends BiomeSource {
     public static final MapCodec<IslandBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("delegate").forGetter(source -> source.delegate),
             Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName),
-            Codec.intRange(1, 2).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
+            Codec.intRange(1, 3).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
             RegistryOps.retrieveGetter(Registries.BIOME)
     ).apply(instance, IslandBiomeSource::new));
 

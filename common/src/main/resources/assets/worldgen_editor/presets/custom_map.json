@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "outer_ocean": "minecraft:deep_ocean",
+  "entries": [],
+  "painted_map": {
+    "version": 1,
+    "step": 4,
+    "size": 64,
+    "tiles": []
+  }
+}

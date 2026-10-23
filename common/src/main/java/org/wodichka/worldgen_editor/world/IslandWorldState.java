@@ -48,6 +48,7 @@ public final class IslandWorldState {
             generator.generatorSettings().value().noiseRouter().mapAll(function -> {
                 if (function instanceof IslandContinentsFunction island) island.bind(binding);
                 if (function instanceof IslandDensityFunction island) island.bind(binding);
+                if (function instanceof IslandCoastFunction island) island.bind(binding);
                 return function;
             });
             save(storedConfig, worldEnabled, preset, version);
@@ -65,14 +66,14 @@ public final class IslandWorldState {
     }
 
     private static IslandConfig effectiveConfig() {
-        return new IslandConfig(storedConfig.enabled() && worldEnabled, storedConfig.outerOcean(), storedConfig.entries());
+        return storedConfig.withEnabled(storedConfig.enabled() && worldEnabled);
     }
 
     private static boolean replace(IslandConfig config, boolean flag, String name, int newVersion) {
         if (binding == null) return false;
         try {
             GenerationContext previous = binding.get();
-            IslandConfig effective = new IslandConfig(config.enabled() && flag, config.outerOcean(), config.entries());
+            IslandConfig effective = config.withEnabled(config.enabled() && flag);
             GenerationContext next = new GenerationContext(previous.seed(), effective, newVersion, previous.biomes());
             save(config, flag, name, newVersion);
             storedConfig = config; worldEnabled = flag; preset = name; version = newVersion;
@@ -91,7 +92,7 @@ public final class IslandWorldState {
         try { return replace(IslandConfigLoader.loadOrCreate(name), worldEnabled, name, version); }
         catch (IslandConfigException error) { LOGGER.error("Could not select preset", error); return false; }
     }
-    public static boolean migrate() { return replace(storedConfig, worldEnabled, preset, GenerationContext.CURRENT_VERSION); }
+    public static boolean migrate() { return replace(storedConfig, worldEnabled, preset, Math.max(version,2)); }
     public static boolean setEnabled(boolean flag) { return replace(storedConfig, flag, preset, version); }
     public static boolean isEnabled() { return binding != null && binding.get().config().enabled(); }
     public static boolean isGlobalEnabled() { return storedConfig.enabled(); }

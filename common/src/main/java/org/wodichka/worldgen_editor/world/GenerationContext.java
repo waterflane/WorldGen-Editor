@@ -8,7 +8,11 @@ import org.wodichka.worldgen_editor.config.IslandConfig;
 public record GenerationContext(long seed, IslandConfig config, int generationVersion,
                                 Registry<Biome> biomes, IslandMask mask, IslandBiomeRules biomeRules) {
     public static final int LEGACY_VERSION = 1;
-    public static final int CURRENT_VERSION = 2;
+    public static final int CURRENT_VERSION = 3;
+
+    public GenerationContext {
+        if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3; create a new custom-map world");
+    }
 
     public GenerationContext(long seed, IslandConfig config, int version, Registry<Biome> biomes) {
         this(seed, config, validateVersion(version), biomes,

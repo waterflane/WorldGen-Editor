@@ -24,7 +24,7 @@ public final class IslandConfigLoader {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String MAIN_DEFAULT_RESOURCE = "/assets/worldgen_editor/default_worldgen_editor.json";
     private static final String PRESET_RESOURCE_ROOT = "/assets/worldgen_editor/presets/";
-    private static final List<String> DEFAULT_PRESETS = List.of("default", "archipelago", "small_island");
+    private static final List<String> DEFAULT_PRESETS = List.of("default", "archipelago", "small_island", "custom_map");
     private static final List<Double> DEFAULT_AMPLITUDES = List.of(1.0D, 0.78D, 0.55D, 0.34D);
     private static final double DEFAULT_NOISE_SCALE = 3.2D;
     private static final int DEFAULT_FIRST_OCTAVE = -1;
@@ -60,12 +60,12 @@ public final class IslandConfigLoader {
                         ? loadMainConfig(MAIN_CONFIG_PATH)
                         : WorldgenEditorConfig.DEFAULT;
                 IslandConfig preset = load(presetPath(presetOverride));
-                return new IslandConfig(mainConfig.enabled(), preset.outerOcean(), preset.entries());
+                return preset.withEnabled(mainConfig.enabled());
             } else if (Files.exists(MAIN_CONFIG_PATH)) {
                 WorldgenEditorConfig mainConfig = loadMainConfig(MAIN_CONFIG_PATH);
                 Path presetPath = presetPath(mainConfig.activePreset());
                 IslandConfig preset = load(presetPath);
-                return new IslandConfig(mainConfig.enabled(), preset.outerOcean(), preset.entries());
+                return preset.withEnabled(mainConfig.enabled());
             }
             return load(CONFIG_PATH);
         } catch (IOException exception) {
@@ -317,7 +317,7 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
-        return new IslandConfig(enabled, outerOcean, parsedEntries);
+        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null);
     }
 
     public static JsonObject toJson(IslandConfig config) {
@@ -351,6 +351,7 @@ public final class IslandConfigLoader {
             entries.add(value);
         }
         root.add("entries", entries);
+        if(config.paintedMap()!=null)root.add("painted_map",config.paintedMap().toJson());
         return root;
     }
 
