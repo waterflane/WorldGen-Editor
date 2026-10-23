@@ -12,13 +12,33 @@ Work is local on DEV; no publishing or pushes.
 - Invalid non-ocean `outer_ocean` IDs already fall back to deep ocean; do not
   broaden biome selection or change old worlds on the basis of this hypothesis.
 
-## Remaining acceptance work
+## Implemented and checked
 
-- Restart-safe generation changes and configuration audit.
-- Version 3 composition with effective modded generation settings.
-- Pinned real-world compatibility matrix (not just loader startup).
-- Sparse painted masks shared by Java and JavaScript.
-- Editor, project persistence, portable export, bounded undo and caches.
-- Actual NeoForge/preview parity, browser interaction and performance checks.
+- Version 3 composition retains the effective generator graph and surface rules; separate codecs save original registry settings instead of non-serializable runtime markers.
+- Immutable running generation contexts; reload/preset/enable/migrate validate and save the next snapshot, requiring a world restart. Failed changes preserve the old snapshot.
+- Explicit version 3 preset disable now survives global defaults. Version 1/2 precedence and golden generation results stay unchanged.
+- Painted snapshots are validated before saving and compare contents deeply. Shared Java/JS masks cover interpolation, negative coordinates, tile boundaries and malformed RLE.
+- The editor has independent draft/applied revisions, worker brushes, continuous strokes, both replacement directions, bounded undo/redo, file project/preset export and IndexedDB recovery. Large paint payloads are parsed outside the main thread.
+- 33 Node tests; common and preview Gradle checks, including 576 legacy biome cases and 576 multi-preset base-height columns; full release build passed. The final version 2 NeoForge test compared 113 biomes and 24 heights with zero mismatches, including river, cave and shore controls.
+- Eleven isolated real-world profiles, including all requested combinations: see [compatibility.md](compatibility.md) and the machine-readable results. Minecraft-only / painted / disabled profiles have zero biome and base-height mismatches in tested points.
+- Browser checks covered painting, ocean cutouts, undo/redo, apply, project save and draft recovery. No console warnings/errors occurred in the final interaction sample.
 
-The compatibility matrix is unverified until real-world results are recorded.
+## Confirmed audit fixes
+
+1. Live context replacement could mix old NoiseChunk caches with new rules. Changes now take effect after restarting the world.
+2. Expanded version 3 noise settings contained HolderHolder markers without codecs; saving a composed Tectonic world failed. The generator saves original registry settings and recomposes on load.
+3. Global enabled=true overrode explicit preset enabled=false. Version 3 now respects both flags; a real disabled-world regression test compares with preview.
+4. Reference-based painted-tile equality and missing snapshot-version validation could misclassify a snapshot or save incompatible masks. Validation and content equality are now explicit.
+5. Large painted JSON could block the browser during apply. Validation/decoding/serialization are worker-owned; the main JSON editor shows small metadata while downloads retain the full applied layer.
+6. Brush settings changed without a stroke were not included in the next project/draft. They now persist independently; browser draft recovery retained both the contour and the changed radius.
+7. An unknown project format could be interpreted as a world snapshot. The failing regression now rejects unsupported formats before replacing a document.
+
+The audit did not confirm a missing outer-ocean fallback: invalid non-ocean IDs already correctly fall back to deep ocean. A regression test records that behavior.
+
+## Performance and limits
+
+`tools/editor-preview-performance.json` separates startup, first frame, complete worker/API view, cached view and checksums. The same painted view took 6179 ms before column-mask memoization, 1484 ms in the updated fresh JVM and 1186 ms in a subsequent new session. The before JVM was already warm; this is not a controlled cold-to-cold experiment. Biome/height checksums match. Cached redraws made zero Java requests.
+
+The browser's 512-block-radius brush produced its first actual canvas draw in 27 ms. `tools/editor-model-performance.json` separately measures a large painted area and 100 far-apart islands; it excludes worker transport/browser presentation. These development-machine samples are not worst-case latency guarantees. The initial heap remains 512 MiB; runtime/classpath size is measured separately without bundling a JRE. A full exact uncached map still takes longer than its first tile.
+
+Limits: 4096 sparse tiles, 32 MiB file import/export, 100 undo actions / 32 MiB history. Finite compatibility sampling and the saved-data reconstruction test do not replace exhaustive feature/seed testing or a full interactive client lifecycle. The release does not claim exact previews for third-party generators or optimizer compatibility.

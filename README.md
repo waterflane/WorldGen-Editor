@@ -3,8 +3,8 @@
 A JSON-driven island world generator for **Minecraft 1.21.1 / NeoForge 21.1.230–21.1.x**, requiring Java 21 or later.
 Fabric, Forge and Architectury API are not runtime dependencies or supported targets.
 
-Select **WGE: Islands**, **WGE: Archipelago** or **WGE: Small Island** when creating a world. Ordinary world types keep their own generators.
-WGE preserves the Minecraft noise generator, modifies continentalness and selects island/ocean biomes. The retained `island_final_density` codec is legacy compatibility code; current presets do not use it.
+Select **WGE: Islands**, **WGE: Archipelago**, **WGE: Small Island** or **WGE: Custom Map (v3)** when creating a world. Ordinary world types keep their own generators.
+Version 3 composes WGE with the effective loaded noise settings and surface rules. It controls continentalness and caps ocean/coast density while retaining the generator's other noises, caves, aquifers and biome delegate. The retained `island_final_density` codec is legacy compatibility code; current presets do not use it.
 
 ## Configuration and saved worlds
 
@@ -15,6 +15,7 @@ config/worldgen_editor/worldgen_editor.json
 config/worldgen_editor/presets/default.json
 config/worldgen_editor/presets/archipelago.json
 config/worldgen_editor/presets/small_island.json
+config/worldgen_editor/presets/custom_map.json
 ```
 
 Minimal main configuration:
@@ -39,7 +40,7 @@ Ordinary island and ocean masks depend on the world seed; archipelago placement 
 Invalid numeric values, overflowing dimensions/frequency ladders and unsupported generation versions are rejected.
 
 On first load, the effective preset is pinned in `<world>/worldgen_editor/worldgen_editor.json`, together with the per-world flag and `generation_version`.
-Existing saves without a version retain version 1. New WGE world types select version 2, which fixes climate selection and preserves underground biomes.
+Existing saves without a version retain version 1. The three procedural WGE world types keep version 2. **Custom Map (v3)** explicitly selects the new painted-map and generator-composition behavior. Old worlds never upgrade to version 3 automatically.
 A restart uses the pinned snapshot rather than a potentially edited global preset. For older worlds, the snapshot captures the configuration available at the first load after this update; past configurations cannot be reconstructed from a seed.
 
 Operator commands:
@@ -54,15 +55,31 @@ Operator commands:
 ```
 
 `preset` selects and pins a preset for the current WGE world. `reload` explicitly imports that preset again from global configuration. Failed changes leave the previous snapshot active.
-`migrate` explicitly opts an old world into generation version 2. These operations affect future generation and can create boundaries against existing chunks; existing chunks are never rewritten.
-An empty/disabled mask delegates to the underlying generator, rather than predicting an all-ocean world.
+Successful changes, including enable/disable and migration, are saved for the **next world restart**. The running generation context stays immutable so existing noise caches and background generation cannot mix configurations. Commands report this restart requirement.
+`migrate` explicitly opts an old world into generation version 2; it does not opt into version 3. Changes affect future chunks after restarting and may create boundaries against existing chunks; existing chunks are never rewritten.
+A disabled or legacy empty mask delegates to the underlying generator. A version 3 preset containing an empty `painted_map` means an all-ocean canvas. In version 3, explicit preset `enabled: false` is respected in addition to the global and per-world flags.
+
+## Draw a new world
+
+In the companion preview's **Редактор карты** tab, start with **Новый океан** or import the preview preset. Paint land/ocean, then export `custom_map.json`. Copy it to `config/worldgen_editor/presets/custom_map.json`, choose **WGE: Custom Map (v3)** and enter the exact numeric seed shown during export. The preset does not set Minecraft's seed itself.
+
+The self-contained preset combines procedural `entries` with optional `painted_map`: version 1, step 4 blocks, 64×64 samples per sparse tile. RLE triples are `[count, coverage, value, ...]`; coverage/value are unsigned 16-bit integers. Later strokes replace earlier strokes in either direction, and bilinear interpolation is shared by Java and JavaScript. Baked shore roughness does not move when changing the seed. Limits are 4096 tiles and the Minecraft coordinate bounds; there is no allocation for the whole world.
+
+The `.wge.json` project additionally retains the seed, format version and editor/view settings. It is an editor file, not a mod preset. Undo history is not exported. This first editor is for new worlds; no biome, height, structure or river painting is included.
 
 ## Compatibility
 
-The optional TerraBlender adapter initializes the actual delegate and surface settings in version 2 worlds. It is tested with TerraBlender NeoForge 4.1.0.8 and a separately registered test biome. Version 1 retains old behavior until explicit migration.
-After migrating a running version 1 world with TerraBlender installed, restart the world to initialize that optional adapter before exploring new areas.
-The preview engine currently supports **Minecraft + WGE**, not the biome registrations of an arbitrary modpack.
-Full integration with terrain replacements such as Terralith/Tectonic, and compatibility with worldgen optimizers, are separate future work.
+Version 3 was tested with the locked NeoForge 1.21.1 versions below, individually and in every requested combination. See [the verification report](docs/compatibility.md) for dependencies, actual checks and their limits. Version 1/2 generation rules remain unchanged.
+
+| Project | Tested version |
+| --- | --- |
+| TerraBlender | 4.1.0.8 |
+| Biomes O' Plenty | 21.1.0.14 (GlitchCore 2.1.0.2 + TerraBlender) |
+| Terralith | 2.6.2 |
+| Tectonic | 3.0.28-neoforge-21.1 |
+| Supporting libraries | Lithostitched 1.8.1, Apollib 1.2.0 |
+
+The optional TerraBlender adapter initializes the actual delegate and surface settings. The standalone preview remains **Minecraft + WGE** and does not load these third-party generators. Worldgen optimizer mods and arbitrary modpacks are outside this verification.
 
 ## Build and test
 
@@ -70,7 +87,7 @@ Full integration with terrain replacements such as Terralith/Tectonic, and compa
 .\gradlew.bat build --no-daemon
 ```
 
-The loader-ready artifact is `neoforge/build/libs/worldgen-editor-neoforge-0.3.0.jar`, also copied into `release/` after the checks pass.
+The loader-ready artifact is `neoforge/build/libs/worldgen-editor-neoforge-0.4.0.jar`, also copied into `release/` after the checks pass.
 The build runs config/mask golden tests, world snapshot persistence tests, generation-context tests and 576 legacy biome-selection golden cases.
 Golden fixtures were generated from commit `c792da7`; the scripts in `tools/` document regeneration.
 
