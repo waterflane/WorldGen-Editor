@@ -23,6 +23,7 @@ public final class IslandWorldState {
     private static boolean worldEnabled = true;
     private static IslandConfig storedConfig = IslandConfig.EMPTY;
     private static int version = 1;
+    private static boolean restartRequired;
     private IslandWorldState() {}
 
     public static void loadGlobalConfig() {
@@ -63,6 +64,7 @@ public final class IslandWorldState {
         if (binding != null) binding.set(null);
         binding = null; preset = null; statePath = null;
         worldEnabled = true; storedConfig = IslandConfig.EMPTY; version = 1;
+        restartRequired=false;
     }
 
     private static IslandConfig effectiveConfig() {
@@ -74,10 +76,12 @@ public final class IslandWorldState {
         try {
             GenerationContext previous = binding.get();
             IslandConfig effective = config.withEnabled(config.enabled() && flag);
-            GenerationContext next = new GenerationContext(previous.seed(), effective, newVersion, previous.biomes());
+            // Validate before saving, but keep the running graph immutable. NoiseChunk and
+            // RandomState may already contain cached cells or be used by generation workers.
+            new GenerationContext(previous.seed(), effective, newVersion, previous.biomes());
             save(config, flag, name, newVersion);
             storedConfig = config; worldEnabled = flag; preset = name; version = newVersion;
-            binding.set(next);
+            restartRequired=true;
             return true;
         } catch (IOException | RuntimeException error) {
             LOGGER.error("Keeping previous WGE snapshot", error); return false;
@@ -103,7 +107,8 @@ public final class IslandWorldState {
     public static Path activeConfigPath() { return statePath; }
     public static Path worldStatePath() { return statePath; }
     public static int islandCount() { return storedConfig.entries().size(); }
-    public static int generationVersion() { return version; }
+    public static int generationVersion() { return binding!=null&&binding.get()!=null?binding.get().generationVersion():version; }
+    public static boolean requiresRestart() { return restartRequired; }
     public static GenerationContext context() { return binding == null ? null : binding.get(); }
 
     private static void save(IslandConfig config, boolean flag, String name, int algorithm) throws IOException {

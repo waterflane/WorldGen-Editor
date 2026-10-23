@@ -29,7 +29,7 @@ public final class WorldgenEditorCommands {
                 .then(Commands.literal("migrate")
                         .executes(context -> {
                             if (!IslandWorldState.migrate()) return 0;
-                            context.getSource().sendSuccess(() -> Component.literal("Generation migrated to version 2; existing chunks are unchanged."), true);
+                            context.getSource().sendSuccess(() -> Component.literal("Generation migration saved. Restart the world to apply it; existing chunks are unchanged."), true);
                             return 1;
                         }))
                 .then(Commands.literal("reload")
@@ -38,9 +38,8 @@ public final class WorldgenEditorCommands {
 
     private static int setEnabled(CommandSourceStack source, boolean enabled) {
         if (IslandWorldState.setEnabled(enabled)) {
-            source.sendSuccess(() -> Component.literal("WorldGen Editor world flag is now " + (enabled ? "enabled" : "disabled")
-                    + ". Effective generation is " + (IslandWorldState.isEnabled() ? "enabled" : "disabled")
-                    + "."), true);
+            source.sendSuccess(() -> Component.literal("WorldGen Editor world flag saved as " + (enabled ? "enabled" : "disabled")
+                    + ". Restart the world to apply generation changes."), true);
             return 1;
         }
 
@@ -60,7 +59,8 @@ public final class WorldgenEditorCommands {
                 - Generation version: %d
                 - Entries: %d
                 - Config: %s
-                - World state: %s""".formatted(
+                - World state: %s
+                - Restart required: %s""".formatted(
                 enabledText(IslandWorldState.isEnabled()),
                 enabledText(IslandWorldState.isGlobalEnabled()),
                 enabledText(IslandWorldState.isWorldEnabled()),
@@ -69,7 +69,8 @@ public final class WorldgenEditorCommands {
                 IslandWorldState.generationVersion(),
                 IslandWorldState.islandCount(),
                 IslandWorldState.activeConfigPath(),
-                worldState == null ? "not loaded" : worldState
+                worldState == null ? "not loaded" : worldState,
+                IslandWorldState.requiresRestart()
         )), false);
         return IslandWorldState.isEnabled() ? 1 : 0;
     }
@@ -80,7 +81,7 @@ public final class WorldgenEditorCommands {
 
     private static int setPreset(CommandSourceStack source, String presetName) {
         if (IslandWorldState.selectPreset(presetName)) {
-            source.sendSuccess(() -> Component.literal("World preset changed to " + presetName + "; only new chunks are affected."), true);
+            source.sendSuccess(() -> Component.literal("World preset saved as " + presetName + ". Restart the world to apply it; existing chunks are unchanged."), true);
             return 1;
         }
         source.sendFailure(Component.literal("Could not change world preset; previous snapshot is still active."));
@@ -90,7 +91,7 @@ public final class WorldgenEditorCommands {
     private static int reload(CommandSourceStack source) {
         boolean success = IslandWorldState.reloadConfig();
         if (success) {
-            source.sendSuccess(() -> Component.literal("WorldGen Editor config reloaded for newly generated chunks."), true);
+            source.sendSuccess(() -> Component.literal("WorldGen Editor config validated and saved. Restart the world to apply it."), true);
             return 1;
         }
 

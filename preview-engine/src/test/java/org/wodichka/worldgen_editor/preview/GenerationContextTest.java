@@ -135,6 +135,17 @@ public final class GenerationContextTest {
                 check(sea.unwrapKey().orElseThrow().location().toString().equals(row.get("ocean").getAsString()),"legacy ocean biome changed");
             }
         }
+        // Simulate the server facade with an isolated state file; a live graph has cached noise cells.
+        var activeBinding=new GenerationBinding();activeBinding.set(fixed);
+        var stateFile=java.nio.file.Files.createTempDirectory(java.nio.file.Path.of("."),"staged-world-").resolve("worldgen_editor.json");
+        String[] fields={"binding","preset","statePath","storedConfig","worldEnabled","version"};
+        Object[] values={activeBinding,"default",stateFile,config,true,2};
+        try{
+            for(int i=0;i<fields.length;i++){var field=IslandWorldState.class.getDeclaredField(fields[i]);field.setAccessible(true);field.set(null,values[i]);}
+            check(IslandWorldState.setEnabled(false),"valid generation change was not saved");
+            check(activeBinding.get()==fixed,"live generation graph changed while noise cells were cached; apply saved changes only on restart");
+            check(!WorldSnapshotStore.loadOrCreate(stateFile,"default",2,name->config).enabled(),"restart configuration was not persisted");
+        }finally{IslandWorldState.clear();}
         System.out.println("Generation context checks, 576 legacy biome cases and "+surfaceChecks+" multi-preset surface columns passed");
     }
 }
