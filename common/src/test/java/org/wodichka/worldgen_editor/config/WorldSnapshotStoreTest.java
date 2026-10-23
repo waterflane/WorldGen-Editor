@@ -18,6 +18,12 @@ public final class WorldSnapshotStoreTest {
         var migrated=new WorldSnapshotStore.Snapshot(true,"small_island",2,config);
         WorldSnapshotStore.save(state,migrated);
         check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->config).equals(migrated),"migration must persist");
+        var painted=IslandConfigLoader.parse(JsonParser.parseString("{\"enabled\":true,\"entries\":[],\"painted_map\":{\"version\":1,\"step\":4,\"size\":64,\"tiles\":[]}}"));
+        String previous=Files.readString(state);
+        try{new WorldSnapshotStore.Snapshot(true,"custom_map",2,painted);throw new AssertionError("old snapshot accepted a painted map");}catch(IllegalArgumentException expected){}
+        check(Files.readString(state).equals(previous),"invalid painted snapshot changed saved state");
+        var custom=new WorldSnapshotStore.Snapshot(true,"custom_map",3,painted);WorldSnapshotStore.save(state,custom);
+        check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->config).equals(custom),"painted world snapshot changed on restart");
         for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":4}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
             Files.writeString(state,invalid);
             try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid snapshot accepted");}

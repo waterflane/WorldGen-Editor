@@ -62,4 +62,13 @@ public final class PaintedMap {
             tile.add("runs",runs);values.add(tile);
         });root.add("tiles",values);return root;
     }
+    @Override public boolean equals(Object other){
+        if(this==other)return true;
+        if(!(other instanceof PaintedMap map)||tiles.size()!=map.tiles.size())return false;
+        for(var entry:tiles.entrySet())if(!Arrays.equals(entry.getValue(),map.tiles.get(entry.getKey())))return false;
+        return true;
+    }
+    @Override public int hashCode(){
+        int hash=0;for(var entry:tiles.entrySet())hash+=entry.getKey().hashCode()^Arrays.hashCode(entry.getValue());return hash;
+    }
 }

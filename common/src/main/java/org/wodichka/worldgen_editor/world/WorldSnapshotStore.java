@@ -13,6 +13,7 @@ public final class WorldSnapshotStore {
             GenerationContext.validateVersion(generationVersion);
             if(preset==null||!preset.matches("[a-z0-9_.-]+"))throw new IllegalArgumentException("Invalid world preset name");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
+            if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3");
         }
     }
     public interface ConfigSupplier { IslandConfig get(String preset)throws IslandConfigException; }
