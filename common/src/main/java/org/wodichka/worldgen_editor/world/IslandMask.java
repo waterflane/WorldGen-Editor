@@ -20,6 +20,10 @@ public final class IslandMask {
     private final List<CompiledIsland> oceanShapes;
     private final List<CompiledParent> archipelagoParents;
     private final org.wodichka.worldgen_editor.config.PaintedMap paintedMap;
+    // A context owns an immutable mask; cache columns separately for each generation thread.
+    private final ThreadLocal<java.util.Map<Long,SampleInfo>> columnSamples=ThreadLocal.withInitial(()->new java.util.LinkedHashMap<>(128,.75f,true){
+        protected boolean removeEldestEntry(java.util.Map.Entry<Long,SampleInfo> entry){return size()>512;}
+    });
 
     public IslandMask(IslandConfig config, long worldSeed) {
         paintedMap=config.paintedMap();
@@ -50,6 +54,15 @@ public final class IslandMask {
     }
 
     public SampleInfo sampleInfo(double blockX, double blockZ) {
+        if(blockX==(int)blockX && blockZ==(int)blockZ){
+            long key=((long)(int)blockX<<32)^((int)blockZ&0xffffffffL);
+            var cache=columnSamples.get();var existing=cache.get(key);if(existing!=null)return existing;
+            var result=computeInfo(blockX,blockZ);cache.put(key,result);return result;
+        }
+        return computeInfo(blockX,blockZ);
+    }
+
+    private SampleInfo computeInfo(double blockX,double blockZ) {
         double union = 0.0D;
         double additive = 0.0D;
         double strongestLand = 0.0D;
