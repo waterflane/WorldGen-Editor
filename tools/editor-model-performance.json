@@ -1,0 +1,23 @@
+{
+  "note": "Model only; not an end-to-end browser latency measurement",
+  "results": [
+    {
+      "scenario": "large_area",
+      "first_model_patch_ms": 25.0652,
+      "model_complete_ms": 523.0258,
+      "serialization_ms": 78.7622,
+      "encoded_bytes": 9353780,
+      "painted_tiles": 567,
+      "history_bytes": 18579456
+    },
+    {
+      "scenario": "distant_islands",
+      "first_model_patch_ms": 3.2547000000000708,
+      "model_complete_ms": 109.15620000000001,
+      "serialization_ms": 24.65859999999998,
+      "encoded_bytes": 2125901,
+      "painted_tiles": 378,
+      "history_bytes": 12386304
+    }
+  ]
+}

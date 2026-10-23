@@ -32,7 +32,7 @@ client = str(uuid.uuid4())
 session_ms, status, session = measured('session', {'seed': '12345', 'config': config,
                                                 'generation_version': 2, 'client': client})
 assert status == 200, session
-for version in [1.5, 3, '2']:
+for version in [1.5, 4, '2']:
     status, error = post('session', {'seed': '12345', 'config': config, 'generation_version': version})
     assert status == 400 and 'generation_version' in error['error'], error
 query = {'session': session['session'], 'client': client, 'request': session['request_base'] + 1,
@@ -60,6 +60,8 @@ with ThreadPoolExecutor(max_workers=1) as pool:
 
 with urllib.request.urlopen(BASE + 'info') as response:
     info = json.load(response)
+assert info['protocol'] == 2 and info['supported_generation_versions'] == [1, 2, 3]
+assert 'painted_map_v1' in info['capabilities'] and 'vanilla_wge_only' in info['capabilities']
 report = dict(session_ms=session_ms, coarse_8x8_ms=first_ms, cached_8x8_ms=repeat_ms,
               dense_32x32_ms=dense_ms, cancellation_ms=cancel_ms, info=info)
 print(json.dumps(report, indent=2))

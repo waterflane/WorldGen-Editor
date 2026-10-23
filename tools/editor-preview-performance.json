@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-23",
+  "note": "Same saved browser test preset, seed 0. Whole worker/API pipeline, excludes browser presentation and process startup. Before uses previous running JVM; after first session starts a fresh JVM. Independent session nonce defeats generation/tile caches; after warm also retains JVM JIT warmup. Not a controlled cold-to-cold comparison. No other sessions were requested during each measurement.",
+  "configuration_sha256": "564c307a0de3e16a57133fd0b045435659bf5fcb8f3633e23a8748023a7ebb66",
+  "startup_seconds": 4.4,
+  "java_heap_limit_mib": 512,
+  "classpath_bytes_excluding_jre": 60112675,
+  "viewport_results": {
+    "before": {
+      "seed": "0",
+      "force_heights": false,
+      "viewport": "850x720, quality 0.65, 6.27 blocks/pixel",
+      "first_tile_ms": 125.9088,
+      "first_visible_frame_ms": 141.7914,
+      "coarse_complete_ms": 206.09159999999997,
+      "full_view_ms": 6179.2314,
+      "cached_view_ms": 80.15189999999984,
+      "cached_requests": 0,
+      "tile_requests": 124,
+      "tile_wall_p50_ms": 66.12760000000071,
+      "tile_wall_p95_ms": 616.1141,
+      "tile_wall_max_ms": 704.4531000000006,
+      "java_max_ms": 700,
+      "skipped_height_samples": 20196,
+      "biomes_sha256": "67a1d0fb404c44c0d3b47df76c8b2429596eeffd26929ea8ba6b3b54b8f5bf56",
+      "biome_height_sha256": "81ecdf6cdd66a1a425c077cf556ac9b93dcedb25f79757c5582d626403d53620"
+    },
+    "after_first_session": {
+      "seed": "0",
+      "force_heights": false,
+      "viewport": "850x720, quality 0.65, 6.27 blocks/pixel",
+      "first_tile_ms": 347.32030000000003,
+      "first_visible_frame_ms": 368.0199,
+      "coarse_complete_ms": 395.022,
+      "full_view_ms": 1484.376,
+      "cached_view_ms": 68.21089999999981,
+      "cached_requests": 0,
+      "tile_requests": 124,
+      "tile_wall_p50_ms": 18.199600000000146,
+      "tile_wall_p95_ms": 130.20690000000002,
+      "tile_wall_max_ms": 214.9609,
+      "java_max_ms": 203,
+      "skipped_height_samples": 20196,
+      "biomes_sha256": "67a1d0fb404c44c0d3b47df76c8b2429596eeffd26929ea8ba6b3b54b8f5bf56",
+      "biome_height_sha256": "81ecdf6cdd66a1a425c077cf556ac9b93dcedb25f79757c5582d626403d53620"
+    },
+    "after_warm_session": {
+      "seed": "0",
+      "force_heights": false,
+      "viewport": "850x720, quality 0.65, 6.27 blocks/pixel",
+      "first_tile_ms": 95.4583,
+      "first_visible_frame_ms": 113.6101,
+      "coarse_complete_ms": 135.3945,
+      "full_view_ms": 1185.9134999999999,
+      "cached_view_ms": 68.66570000000002,
+      "cached_requests": 0,
+      "tile_requests": 124,
+      "tile_wall_p50_ms": 13.533099999999877,
+      "tile_wall_p95_ms": 104.23450000000003,
+      "tile_wall_max_ms": 117.18080000000009,
+      "java_max_ms": 114,
+      "skipped_height_samples": 20196,
+      "biomes_sha256": "67a1d0fb404c44c0d3b47df76c8b2429596eeffd26929ea8ba6b3b54b8f5bf56",
+      "biome_height_sha256": "81ecdf6cdd66a1a425c077cf556ac9b93dcedb25f79757c5582d626403d53620"
+    }
+  },
+  "browser_brush": {
+    "radius_blocks": 512,
+    "first_draw_ms": 27,
+    "stroke_complete_ms": 227,
+    "painted_tiles": 33,
+    "note": "Actual canvas draw after pointerdown; includes worker transport. One development-machine browser run, not a worst-case guarantee."
+  },
+  "process_memory_sample": {
+    "working_set_bytes": 434982912,
+    "private_bytes": 473997312,
+    "note": "Windows process snapshot after viewport measurements, includes JVM native memory; not a maximum"
+  },
+  "api_checks": {
+    "session_ms": 74.34,
+    "coarse_8x8_ms": 25.11,
+    "cached_8x8_ms": 0.8,
+    "dense_32x32_ms": 80.59,
+    "cancellation_ms": 1.69,
+    "info": {
+      "protocol": 2,
+      "minecraft": "1.21.1",
+      "generation_version": 3,
+      "supported_generation_versions": [
+        1,
+        2,
+        3
+      ],
+      "capabilities": [
+        "painted_map_v1",
+        "vanilla_wge_only"
+      ],
+      "resources": "minecraft-1.21.1-wge-3-ac7ed3c616a6bcc3a3dd96ca43fe80f4a616770bda5333faa09eccd2d54ed33e",
+      "workers": 6,
+      "sampling_engine": "column",
+      "heap_used_mib": 212
+    }
+  }
+}
