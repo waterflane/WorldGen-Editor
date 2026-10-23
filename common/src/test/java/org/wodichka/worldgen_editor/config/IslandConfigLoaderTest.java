@@ -33,6 +33,16 @@ public final class IslandConfigLoaderTest {
         sampleInfoReportsSources();
         archipelagoMaskIsDeterministic();
         islandMaskIsDeterministic();
+        presetEnabledPrecedence();
+    }
+
+    private static void presetEnabledPrecedence() throws Exception {
+        var preset=JsonParser.parseString("{\"enabled\":false,\"entries\":[]}").getAsJsonObject();
+        assertTrue(IslandConfigLoader.resolvePreset(WorldgenEditorConfig.DEFAULT,preset,false).enabled(),"legacy preset precedence changed");
+        assertTrue(!IslandConfigLoader.resolvePreset(WorldgenEditorConfig.DEFAULT,preset,true).enabled(),"v3 ignored explicit preset enabled:false");
+        preset.remove("enabled");
+        assertTrue(IslandConfigLoader.resolvePreset(WorldgenEditorConfig.DEFAULT,preset,true).enabled(),"v3 absent enabled must mean true");
+        assertTrue(!IslandConfigLoader.resolvePreset(new WorldgenEditorConfig(false,"default"),preset,true).enabled(),"global disable must dominate presets");
     }
 
     private static void goldenMasks() throws Exception {

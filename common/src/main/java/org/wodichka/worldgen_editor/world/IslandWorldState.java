@@ -40,7 +40,7 @@ public final class IslandWorldState {
         preset = source.presetName(); version = source.generationVersion();
         statePath = server.getWorldPath(LevelResource.ROOT).resolve("worldgen_editor/worldgen_editor.json");
         try {
-            var saved=WorldSnapshotStore.loadOrCreate(statePath,preset,version,IslandConfigLoader::loadOrCreate);
+            var saved=WorldSnapshotStore.loadOrCreate(statePath,preset,version,name->IslandConfigLoader.loadOrCreate(name,source.generationVersion()>=3));
             worldEnabled=saved.enabled();preset=saved.preset();version=saved.generationVersion();storedConfig=saved.config();
             Registry<Biome> biomes = server.registryAccess().registryOrThrow(Registries.BIOME);
             binding = new GenerationBinding();
@@ -89,11 +89,11 @@ public final class IslandWorldState {
     }
 
     public static boolean reloadConfig() {
-        try { return replace(IslandConfigLoader.loadOrCreate(preset), worldEnabled, preset, version); }
+        try { return replace(IslandConfigLoader.loadOrCreate(preset,version>=3), worldEnabled, preset, version); }
         catch (IslandConfigException error) { LOGGER.error("Keeping previous WGE config", error); return false; }
     }
     public static boolean selectPreset(String name) {
-        try { return replace(IslandConfigLoader.loadOrCreate(name), worldEnabled, name, version); }
+        try { return replace(IslandConfigLoader.loadOrCreate(name,version>=3), worldEnabled, name, version); }
         catch (IslandConfigException error) { LOGGER.error("Could not select preset", error); return false; }
     }
     public static boolean migrate() { return replace(storedConfig, worldEnabled, preset, Math.max(version,2)); }

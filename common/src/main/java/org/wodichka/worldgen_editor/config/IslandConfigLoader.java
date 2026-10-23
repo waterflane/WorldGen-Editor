@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import org.wodichka.worldgen_editor.Worldgen_editor;
 
 import java.io.IOException;
@@ -53,24 +54,39 @@ public final class IslandConfigLoader {
     }
 
     public static IslandConfig loadOrCreate(String presetOverride) throws IslandConfigException {
+        return loadOrCreate(presetOverride,false);
+    }
+
+    public static IslandConfig loadOrCreate(String presetOverride,boolean honorPresetEnabled) throws IslandConfigException {
         try {
             ensureDefaultExists();
             if (presetOverride != null && !presetOverride.isBlank()) {
                 WorldgenEditorConfig mainConfig = Files.exists(MAIN_CONFIG_PATH)
                         ? loadMainConfig(MAIN_CONFIG_PATH)
                         : WorldgenEditorConfig.DEFAULT;
-                IslandConfig preset = load(presetPath(presetOverride));
-                return preset.withEnabled(mainConfig.enabled());
+                return loadPreset(presetPath(presetOverride),mainConfig,honorPresetEnabled);
             } else if (Files.exists(MAIN_CONFIG_PATH)) {
                 WorldgenEditorConfig mainConfig = loadMainConfig(MAIN_CONFIG_PATH);
                 Path presetPath = presetPath(mainConfig.activePreset());
-                IslandConfig preset = load(presetPath);
-                return preset.withEnabled(mainConfig.enabled());
+                return loadPreset(presetPath,mainConfig,honorPresetEnabled);
             }
             return load(CONFIG_PATH);
         } catch (IOException exception) {
             throw new IslandConfigException("Could not read island config: " + exception.getMessage(), exception);
         }
+    }
+
+    private static IslandConfig loadPreset(Path path,WorldgenEditorConfig main,boolean honorEnabled) throws IOException,IslandConfigException {
+        try(var reader=Files.newBufferedReader(path)){
+            return resolvePreset(main,JsonParser.parseReader(reader).getAsJsonObject(),honorEnabled);
+        }catch(JsonParseException|IllegalStateException error){throw new IslandConfigException("Invalid preset: "+path,error);}
+    }
+
+    static IslandConfig resolvePreset(WorldgenEditorConfig main,JsonObject root,boolean honorEnabled) throws IslandConfigException {
+        JsonObject preset=root.deepCopy();
+        if(honorEnabled&&!preset.has("enabled"))preset.addProperty("enabled",true);
+        IslandConfig parsed=parse(preset);
+        return parsed.withEnabled(main.enabled()&&(!honorEnabled||parsed.enabled()));
     }
 
     public static void setActivePreset(String presetName) throws IOException, IslandConfigException {
