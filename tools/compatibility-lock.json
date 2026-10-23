@@ -1,0 +1,66 @@
+[
+  {
+    "url": "https://cdn.modrinth.com/data/HXF82T3G/versions/BtZKRp69/BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "id": "BtZKRp69",
+    "sha512": "1569d9ed5b619f99d61a7cf1b2d886b278df2905b3ce9324f8e7a17c5c960312ec681cc06f1ad96644bde2cdc60440d8be9952f0ee0f84f7937210f46fbb21d7",
+    "project": "biomes-o-plenty",
+    "version": "21.1.0.14",
+    "filename": "BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/s3dmwKy5/versions/S2TfWrZR/GlitchCore-neoforge-1.21.1-2.1.0.2.jar",
+    "id": "S2TfWrZR",
+    "sha512": "7a009ed163d03536fdfaee7b37cb1ec3073204dffcb06a683369aa88da8dbc3780b0ac69d466bb32a3ad9394c97b698d0fda676e1b4dd4edfc50ac5aa2283c32",
+    "project": "glitchcore",
+    "version": "2.1.0.2",
+    "filename": "GlitchCore-neoforge-1.21.1-2.1.0.2.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/kkmrDlKT/versions/6e8GCrLb/TerraBlender-neoforge-1.21.1-4.1.0.8.jar",
+    "id": "6e8GCrLb",
+    "sha512": "9d4b2a1be5139c0fb2fad92ed21805b17d9e83b6ea48e637e018bb14063c1823a206390755dbfe8d025c20fd62ac11cdd84db53ddb956dabaeda01bff57bac50",
+    "project": "terrablender",
+    "version": "4.1.0.8",
+    "filename": "TerraBlender-neoforge-1.21.1-4.1.0.8.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/IY93YaEe/Terralith_1.21.1_v2.6.2_Neoforge.jar",
+    "id": "IY93YaEe",
+    "sha512": "35298f1682567f63dc16658b04cee5498b30819f1c05f9712b4480d7f5eb17059db3b13ab14f81a05fe257149d11ced2cce2030d3727c1747edd8657c53e2a85",
+    "project": "terralith",
+    "version": "2.6.2",
+    "filename": "Terralith_1.21.1_v2.6.2_Neoforge.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/lWDHr9jE/versions/n4iyW7aB/tectonic-3.0.28-neoforge-21.1.jar",
+    "id": "n4iyW7aB",
+    "sha512": "e07b9cb54f078b7bf74c925c5cebd6643f0b4c210b8f94474e68659b69468ece7d61432f70eafe7abaa1dfa798e4638aad297987c121dc127588c2623b7f7a81",
+    "project": "tectonic",
+    "version": "3.0.28-neoforge-21.1",
+    "filename": "tectonic-3.0.28-neoforge-21.1.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/XaDC71GB/versions/cZu4cHY3/lithostitched-1.8.1-neoforge-21.1.jar",
+    "id": "cZu4cHY3",
+    "sha512": "6c02b8b269269d5aa84cb03bf824a1b5d52838e806c2fec8727eb4049925592dac9bb65c996858751fbb722f22ac59c4be09860e1f01e8f7b97c95be3faf7a57",
+    "project": "lithostitched",
+    "version": "1.8.1-neoforge-21.1",
+    "filename": "lithostitched-1.8.1-neoforge-21.1.jar"
+  },
+  {
+    "url": "https://cdn.modrinth.com/data/VDI2Ytax/versions/zMAIdVwq/apollib-1.2.0-neoforge-21.1.jar",
+    "filename": "apollib-1.2.0-neoforge-21.1.jar",
+    "id": "zMAIdVwq",
+    "version": "1.2.0-neoforge-21.1",
+    "project": "apollib",
+    "sha512": "cd047ad08832826995ebeeb6fa5e2bede8eeabe28a06676b1e11c6fc2bc9f61d84c54714433505b7cdcfc9be9422e7f3afa7565f9aa38223d2a95661551f980e"
+  },
+  {
+    "project": "json5-java",
+    "version": "3.0.0",
+    "filename": "json5-java-3.0.0.jar",
+    "embedded_in": "apollib",
+    "entry": "META-INF/jarjar/json5-java-3.0.0.jar",
+    "sha512": "24cf9325438e986c2e691be22b12b95f74233d7dd2c0e49a15245b46f04c8043f7e1f1ad00001b7fe73f4c02957919160c5a7330758a65301d9c1e515b69b5d1"
+  }
+]

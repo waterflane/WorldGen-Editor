@@ -49,6 +49,11 @@ public final class GenerationGameTests {
     }
     @GameTest(template="empty",timeoutTicks=1200)
     public static void previewMatchesWorld(GameTestHelper helper) throws Exception {
+        if(Boolean.getBoolean("wge.compatibilityVerification")){
+            Class.forName("org.wodichka.worldgen_editor.verification.CompatibilityVerification")
+                .getMethod("verify",GameTestHelper.class).invoke(null,helper);
+            return;
+        }
         if(Boolean.getBoolean("wge.terrablenderVerification")) {
             Class.forName("org.wodichka.worldgen_editor.verification.TerraBlenderVerification")
                 .getMethod("verify",GameTestHelper.class).invoke(null,helper);

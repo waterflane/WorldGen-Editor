@@ -1,0 +1,342 @@
+{
+  "terralith": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 27.12,
+    "log": "build\\compat-terralith.log",
+    "checks": {
+      "profile": "terralith",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft",
+        "terralith"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 2423,
+      "noise_namespaces": [
+        "minecraft",
+        "terralith"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 43,
+      "cave_air_blocks": 42,
+      "actual_surface_blocks": [
+        "minecraft:gravel",
+        "minecraft:stone"
+      ]
+    }
+  },
+  "tectonic": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 28.31,
+    "log": "build\\compat-tectonic.log",
+    "checks": {
+      "profile": "tectonic",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 148,
+      "noise_namespaces": [
+        "minecraft",
+        "tectonic"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 6,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": []
+    }
+  },
+  "terratonic": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 29.66,
+    "log": "build\\compat-terratonic.log",
+    "checks": {
+      "profile": "terratonic",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "terralith",
+        "minecraft"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 2065,
+      "noise_namespaces": [
+        "minecraft",
+        "tectonic",
+        "terralith"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 6,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": [
+        "minecraft:andesite",
+        "minecraft:gravel"
+      ]
+    }
+  },
+  "bop_terralith": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 28.79,
+    "log": "build\\compat-bop_terralith.log",
+    "checks": {
+      "profile": "bop_terralith",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "terralith",
+        "minecraft",
+        "biomesoplenty"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 853,
+      "noise_namespaces": [
+        "minecraft",
+        "terralith"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 43,
+      "cave_air_blocks": 42,
+      "actual_surface_blocks": [
+        "biomesoplenty:jacaranda_leaves",
+        "biomesoplenty:snowblossom_leaves",
+        "minecraft:clay",
+        "minecraft:dirt",
+        "minecraft:grass_block",
+        "minecraft:gravel",
+        "minecraft:sand",
+        "minecraft:stone"
+      ]
+    }
+  },
+  "bop_tectonic": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 29.71,
+    "log": "build\\compat-bop_tectonic.log",
+    "checks": {
+      "profile": "bop_tectonic",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft",
+        "biomesoplenty"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 30,
+      "noise_namespaces": [
+        "minecraft",
+        "tectonic"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 6,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": [
+        "biomesoplenty:spider_egg",
+        "minecraft:coal_ore",
+        "minecraft:gravel",
+        "minecraft:stone"
+      ]
+    }
+  },
+  "combined": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 30.93,
+    "log": "build\\compat-combined.log",
+    "checks": {
+      "profile": "combined",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "terralith",
+        "minecraft",
+        "biomesoplenty"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 715,
+      "noise_namespaces": [
+        "minecraft",
+        "tectonic",
+        "terralith"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 6,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": [
+        "minecraft:coal_ore",
+        "minecraft:grass_block",
+        "minecraft:gravel",
+        "minecraft:stone",
+        "minecraft:stone_slab"
+      ]
+    }
+  },
+  "vanilla": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 27.45,
+    "log": "build\\compat-vanilla.log",
+    "checks": {
+      "profile": "vanilla",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 84,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 259,
+      "noise_namespaces": [
+        "minecraft"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 57,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": []
+    }
+  },
+  "painted": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 25.94,
+    "log": "build\\compat-painted.log",
+    "checks": {
+      "profile": "painted",
+      "generation_version": 3,
+      "climate_samples": 9,
+      "biome_namespaces": [
+        "minecraft"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 84,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 1,
+      "noise_namespaces": [
+        "minecraft"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 23,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": []
+    }
+  },
+  "terrablender": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 26.9,
+    "log": "build\\compat-terrablender.log",
+    "checks": {
+      "profile": "terrablender",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 259,
+      "noise_namespaces": [
+        "minecraft"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 57,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": []
+    }
+  },
+  "bop": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 27.87,
+    "log": "build\\compat-bop.log",
+    "checks": {
+      "profile": "bop",
+      "generation_version": 3,
+      "climate_samples": 1572,
+      "biome_namespaces": [
+        "minecraft",
+        "biomesoplenty"
+      ],
+      "ocean_columns": 2,
+      "preview_biome_samples": 0,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 99,
+      "noise_namespaces": [
+        "minecraft"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 57,
+      "cave_air_blocks": 43,
+      "actual_surface_blocks": [
+        "minecraft:dirt",
+        "minecraft:gravel"
+      ]
+    }
+  },
+  "disabled": {
+    "status": "passed",
+    "exit_code": 0,
+    "elapsed_seconds": 26.21,
+    "log": "build\\compat-disabled.log",
+    "checks": {
+      "profile": "disabled",
+      "generation_version": 3,
+      "climate_samples": 0,
+      "biome_namespaces": [],
+      "ocean_columns": 0,
+      "preview_biome_samples": 84,
+      "mismatches": 0,
+      "generator_codec_roundtrip": true,
+      "saved_settings_reload": true,
+      "underground_samples": 0,
+      "noise_namespaces": [
+        "minecraft"
+      ],
+      "surface_rules_preserved": true,
+      "solid_land_columns": 0,
+      "cave_air_blocks": 0,
+      "actual_surface_blocks": []
+    }
+  }
+}

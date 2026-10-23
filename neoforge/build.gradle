@@ -86,3 +86,48 @@ if (project.hasProperty('withTerraBlender')) {
     loom.runs.verification.property 'wge.terrablenderVerification', 'true'
     loom.runs.verification.runDir 'build/terrablender-verification-run'
 }
+
+if (project.hasProperty('compatProfile')) {
+    def profiles = [
+        vanilla: [], painted: [], disabled: [],
+        terrablender: ['terrablender'],
+        bop: ['biomes-o-plenty','glitchcore','terrablender'],
+        terralith: ['terralith','lithostitched','apollib'],
+        tectonic: ['tectonic','lithostitched','apollib'],
+        terratonic: ['terralith','tectonic','lithostitched','apollib'],
+        bop_terralith: ['biomes-o-plenty','glitchcore','terrablender','terralith','lithostitched','apollib'],
+        bop_tectonic: ['biomes-o-plenty','glitchcore','terrablender','tectonic','lithostitched','apollib'],
+        combined: ['biomes-o-plenty','glitchcore','terrablender','terralith','tectonic','lithostitched','apollib']
+    ]
+    def profile=project.property('compatProfile').toString()
+    if(!profiles.containsKey(profile))throw new GradleException("Unknown compatibility profile: $profile")
+    def lock=new groovy.json.JsonSlurper().parse(rootProject.file('tools/compatibility-lock.json'))
+    dependencies {
+        if(profiles[profile].contains('apollib'))modRuntimeOnly files('build/compatibility-libs/json5-java-3.0.0-gamelibrary.jar')
+        profiles[profile].each { name ->
+            def artifact=lock.find { it.project==name }
+            if(artifact==null)throw new GradleException("Missing compatibility lock for $name")
+            modRuntimeOnly files("build/compatibility-libs/${artifact.filename}")
+        }
+    }
+    sourceSets.verification.java.srcDir 'src/compatibilityVerification/java'
+    loom.runs.verification.property 'wge.compatibilityVerification','true'
+    loom.runs.verification.property 'wge.compatProfile',profile
+    loom.runs.verification.runDir "build/compatibility-runs/$profile-v3"
+    tasks.named('processVerificationResources').configure {
+        inputs.property 'compatibilityProfile',profile
+        filesMatching('data/minecraft/worldgen/world_preset/flat.json') {
+            filter { line -> line.replace('"generation_version": 2','"generation_version": 3').replace('"worldgen_editor:island_overworld"','"minecraft:overworld"') }
+        }
+    }
+    tasks.named('runVerification').configure {
+        doFirst {
+            def dir=file("build/compatibility-runs/$profile-v3/config/worldgen_editor/presets")
+            dir.mkdirs()
+            def config=[enabled:true,outer_ocean:'minecraft:deep_ocean',entries:[[name:'Verification',x:0,z:0,radius:6000,temperature:'standard']]]
+            if(profile=='painted')config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/painted-islands.json'))
+            if(profile=='disabled')config.enabled=false
+            new File(dir,'default.json').text=groovy.json.JsonOutput.toJson(config)
+        }
+    }
+}
