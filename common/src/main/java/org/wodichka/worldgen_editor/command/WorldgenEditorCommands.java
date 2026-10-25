@@ -24,7 +24,7 @@ public final class WorldgenEditorCommands {
                 .then(Commands.literal("status")
                         .executes(context -> status(context.getSource())))
                 .then(Commands.literal("preset")
-                        .then(Commands.argument("name", StringArgumentType.word())
+                        .then(Commands.argument("name", StringArgumentType.string())
                                 .executes(context -> setPreset(context.getSource(), StringArgumentType.getString(context, "name")))))
                 .then(Commands.literal("migrate")
                         .executes(context -> {

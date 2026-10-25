@@ -77,15 +77,11 @@ public final class IslandConfigLoader {
     }
 
     private static IslandConfig loadPreset(Path path,WorldgenEditorConfig main,boolean honorEnabled) throws IOException,IslandConfigException {
-        try(var reader=Files.newBufferedReader(path)){
-            return resolvePreset(main,JsonParser.parseReader(reader).getAsJsonObject(),honorEnabled);
-        }catch(JsonParseException|IllegalStateException error){throw new IslandConfigException("Invalid preset: "+path,error);}
+        return resolvePreset(main,PresetDocument.readObject(path),honorEnabled);
     }
 
     static IslandConfig resolvePreset(WorldgenEditorConfig main,JsonObject root,boolean honorEnabled) throws IslandConfigException {
-        JsonObject preset=root.deepCopy();
-        if(honorEnabled&&!preset.has("enabled"))preset.addProperty("enabled",true);
-        IslandConfig parsed=parse(preset);
+        IslandConfig parsed=PresetDocument.parse(root).config();
         return parsed.withEnabled(main.enabled()&&(!honorEnabled||parsed.enabled()));
     }
 
@@ -110,12 +106,8 @@ public final class IslandConfigLoader {
     }
 
     public static IslandConfig load(Path path) throws IOException, IslandConfigException {
-        try (Reader reader = Files.newBufferedReader(path)) {
-            JsonElement root = GSON.fromJson(reader, JsonElement.class);
-            return parse(root);
-        } catch (JsonParseException exception) {
-            throw new IslandConfigException("Invalid JSON in " + path + ": " + exception.getMessage(), exception);
-        }
+        var root=PresetDocument.readObject(path);
+        return root.has("format")||root.has("config")?PresetDocument.parse(root).config():parse(root);
     }
 
     public static Path activeConfigPath() {
@@ -161,6 +153,12 @@ public final class IslandConfigLoader {
     public static Path presetPath(String presetName) throws IslandConfigException {
         validatePresetName(presetName, "active_preset");
         return PRESETS_DIR.resolve(presetName + ".json");
+    }
+
+    public static boolean isSafePresetName(String value) {
+        if(value==null||value.isBlank()||value.length()>180||!value.equals(value.trim())||value.endsWith(".")||value.equals(".")||value.equals(".."))return false;
+        if(value.chars().anyMatch(c->Character.isISOControl(c)||"/\\:<>\"|?*".indexOf(c)>=0))return false;
+        return !value.split("\\.",2)[0].matches("(?i:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])");
     }
 
     private static void ensureDefaultExists() throws IOException {
@@ -217,6 +215,8 @@ public final class IslandConfigLoader {
 
     public static IslandConfig parse(JsonElement root) throws IslandConfigException {
         JsonObject object = requireObject(root, "root");
+        String displayName=optionalString(object,"name","","root").trim();
+        if((object.has("name")&&displayName.isBlank())||displayName.length()>120||displayName.chars().anyMatch(Character::isISOControl))throw new IslandConfigException("root.name must contain 1–120 characters without control characters");
         boolean enabled = optionalBoolean(object, "enabled", false, "root");
         String outerOcean = optionalString(object, "outer_ocean", IslandConfig.DEFAULT_OUTER_OCEAN, "root");
         if (!isValidBiomeId(outerOcean)) {
@@ -333,11 +333,12 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
-        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null);
+        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null,displayName);
     }
 
     public static JsonObject toJson(IslandConfig config) {
         JsonObject root = new JsonObject();
+        if(!config.name().isEmpty())root.addProperty("name",config.name());
         root.addProperty("enabled", config.enabled());
         root.addProperty("outer_ocean", config.outerOcean());
         JsonArray entries = new JsonArray();
@@ -398,20 +399,7 @@ public final class IslandConfigLoader {
     }
 
     private static void validatePresetName(String value, String path) throws IslandConfigException {
-        if (value == null || value.isBlank()) {
-            throw new IslandConfigException(path + " must not be empty");
-        }
-        for (int index = 0; index < value.length(); index++) {
-            char character = value.charAt(index);
-            boolean valid = character >= 'a' && character <= 'z'
-                    || character >= '0' && character <= '9'
-                    || character == '_'
-                    || character == '-'
-                    || character == '.';
-            if (!valid) {
-                throw new IslandConfigException(path + " may only contain lowercase letters, digits, '_', '-' and '.'");
-            }
-        }
+        if(!isSafePresetName(value))throw new IslandConfigException(path+" must be a safe preset filename without path separators");
     }
 
     private static boolean isValidBiomeId(String id) {

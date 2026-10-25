@@ -11,7 +11,7 @@ public final class WorldSnapshotStore {
     public record Snapshot(boolean enabled,String preset,int generationVersion,IslandConfig config) {
         public Snapshot {
             GenerationContext.validateVersion(generationVersion);
-            if(preset==null||!preset.matches("[a-z0-9_.-]+"))throw new IllegalArgumentException("Invalid world preset name");
+            if(!IslandConfigLoader.isSafePresetName(preset))throw new IllegalArgumentException("Invalid world preset filename");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
             if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3");
         }

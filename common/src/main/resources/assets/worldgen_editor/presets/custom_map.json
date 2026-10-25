@@ -1,4 +1,5 @@
 {
+  "name": "Empty Ocean",
   "enabled": true,
   "outer_ocean": "minecraft:deep_ocean",
   "entries": [],

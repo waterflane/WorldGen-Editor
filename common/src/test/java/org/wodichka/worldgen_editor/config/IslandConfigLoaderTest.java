@@ -34,6 +34,17 @@ public final class IslandConfigLoaderTest {
         archipelagoMaskIsDeterministic();
         islandMaskIsDeterministic();
         presetEnabledPrecedence();
+        loadsEditorProjectAsPreset();
+    }
+
+    private static void loadsEditorProjectAsPreset() throws Exception {
+        var project=JsonParser.parseString("""
+            {"format":"wge-map-project","version":1,"seed":"42","config":{
+             "enabled":true,"entries":[],"generation_version":3,
+             "painted_map":{"version":1,"step":4,"size":64,"tiles":[]}},"editor":{}}
+            """).getAsJsonObject();
+        var parsed=IslandConfigLoader.resolvePreset(WorldgenEditorConfig.DEFAULT,project,true);
+        assertTrue(parsed.paintedMap()!=null&&parsed.enabled(),"editor project was not recognized as a painted preset");
     }
 
     private static void presetEnabledPrecedence() throws Exception {

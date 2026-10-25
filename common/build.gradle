@@ -28,3 +28,11 @@ tasks.register('runPaintedTests', JavaExec) {
     mainClass = 'org.wodichka.worldgen_editor.config.PaintedMapTest'
 }
 check.dependsOn runPaintedTests
+
+tasks.register('runPresetTests', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.wodichka.worldgen_editor.config.PresetCatalogTest'
+    if(project.hasProperty('projectPreset'))args project.property('projectPreset')
+}
+check.dependsOn runPresetTests
