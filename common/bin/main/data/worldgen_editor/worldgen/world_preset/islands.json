@@ -10,7 +10,8 @@
           "delegate": {
             "type": "minecraft:multi_noise",
             "preset": "minecraft:overworld"
-          }
+          },
+          "generation_version": 2
         },
         "settings": "worldgen_editor:island_overworld"
       }

@@ -3,6 +3,7 @@
   "values": [
     "worldgen_editor:islands",
     "worldgen_editor:archipelago",
-    "worldgen_editor:small_island"
+    "worldgen_editor:small_island",
+    "worldgen_editor:custom_map"
   ]
 }
