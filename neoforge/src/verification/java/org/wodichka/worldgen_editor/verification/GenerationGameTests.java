@@ -18,7 +18,7 @@ import java.util.*;
 @PrefixGameTestTemplate(false)
 public final class GenerationGameTests {
     private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(3)).build();
-    private static JsonObject post(String path,JsonObject value) throws Exception {
+    static JsonObject post(String path,JsonObject value) throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:8765/api/"+path))
                 .timeout(java.time.Duration.ofSeconds(15))
                 .header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(value.toString())).build();
@@ -26,19 +26,19 @@ public final class GenerationGameTests {
         if(response.statusCode()!=200)throw new AssertionError(response.body());
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
-    private static JsonObject query(String session,int x,int y,int z,String mode) {
+    static JsonObject query(String session,int x,int y,int z,String mode) {
         var query=new JsonObject();query.addProperty("session",session);query.addProperty("request",100000);
         query.addProperty("x",x);query.addProperty("z",z);query.addProperty("size",1);query.addProperty("step",1);
         query.addProperty("height_mode",mode);query.addProperty("y",y);return query;
     }
-    private static String compareBiome(GameTestHelper helper,String session,int x,int y,int z)throws Exception {
+    static String compareBiome(GameTestHelper helper,String session,int x,int y,int z)throws Exception {
         var tile=post("tile",query(session,x,y,z,"slice"));
         String expected=tile.getAsJsonArray("palette").get(tile.getAsJsonArray("biomes").get(0).getAsInt()).getAsString();
         String actual=helper.getLevel().getBiome(new BlockPos(x,y,z)).unwrapKey().orElseThrow().location().toString();
         helper.assertTrue(expected.equals(actual),"Biome mismatch at "+x+","+y+","+z+": "+actual+" != "+expected);
         return actual;
     }
-    private static void compareFastSurface(GameTestHelper helper,String session,int x,int surface,int z)throws Exception {
+    static void compareFastSurface(GameTestHelper helper,String session,int x,int surface,int z)throws Exception {
         var request=query(session,x,0,z,"surface");request.addProperty("include_heights",false);
         var tile=post("tile",request);
         String expected=tile.getAsJsonArray("palette").get(tile.getAsJsonArray("biomes").get(0).getAsInt()).getAsString();
@@ -49,6 +49,7 @@ public final class GenerationGameTests {
     }
     @GameTest(template="empty",timeoutTicks=1200)
     public static void previewMatchesWorld(GameTestHelper helper) throws Exception {
+        if(Boolean.getBoolean("wge.oceanVerification")) { OceanVerification.verify(helper);return; }
         if(Boolean.getBoolean("wge.compatibilityVerification")){
             Class.forName("org.wodichka.worldgen_editor.verification.CompatibilityVerification")
                 .getMethod("verify",GameTestHelper.class).invoke(null,helper);

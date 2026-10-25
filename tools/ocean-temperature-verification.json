@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-25",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mod_version": "0.4.0",
+  "input_file": "test-map.json",
+  "input_sha256": "380286fd809d8ca7f747157e36bcad7553818e6c0f144c0b9cb55e14b389758c",
+  "painted_tiles": 17,
+  "regression_before_fix": "failed: unconfigured coastline inherited temperature in v1 from minecraft:frozen_ocean",
+  "java_ocean_policy_checks": 1920,
+  "historical_biome_cases": 576,
+  "multi_preset_height_columns": 576,
+  "preview_tests_passed": 41,
+  "cases": {
+    "default": {
+      "seed": 2,
+      "ocean_temperature": "default",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "normal_ocean_samples": 19,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true,
+      "screenshot_coordinate_biomes": [
+        "minecraft:ocean",
+        "minecraft:ocean",
+        "minecraft:ocean",
+        "minecraft:ocean"
+      ],
+      "result_path": "neoforge/build/ocean-verification/painted-default-1/ocean-result.json"
+    },
+    "temperate": {
+      "seed": 2,
+      "ocean_temperature": "temperate",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "normal_ocean_samples": 19,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true,
+      "screenshot_coordinate_biomes": [
+        "minecraft:ocean",
+        "minecraft:ocean",
+        "minecraft:ocean",
+        "minecraft:ocean"
+      ],
+      "result_path": "neoforge/build/ocean-verification/painted-temperate-1/ocean-result.json"
+    },
+    "cold": {
+      "seed": 2,
+      "ocean_temperature": "cold",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "normal_ocean_samples": 0,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true,
+      "screenshot_coordinate_biomes": [
+        "minecraft:frozen_ocean",
+        "minecraft:frozen_ocean",
+        "minecraft:frozen_ocean",
+        "minecraft:frozen_ocean"
+      ],
+      "result_path": "neoforge/build/ocean-verification/painted-cold-1/ocean-result.json"
+    },
+    "warm": {
+      "seed": 2,
+      "ocean_temperature": "warm",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "normal_ocean_samples": 0,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true,
+      "screenshot_coordinate_biomes": [
+        "minecraft:warm_ocean",
+        "minecraft:warm_ocean",
+        "minecraft:warm_ocean",
+        "minecraft:warm_ocean"
+      ],
+      "result_path": "neoforge/build/ocean-verification/painted-warm-1/ocean-result.json"
+    }
+  },
+  "separate_process_reopen_with_invalid_source_preset": "passed",
+  "browser_checks": {
+    "origin": "http://127.0.0.1:8766",
+    "selector": true,
+    "unapplied_state": true,
+    "applied_json": true,
+    "user_recovery_draft_untouched": true
+  },
+  "full_release_build": "passed",
+  "test_only_entries_in_release": [],
+  "release_sha256": "f413749a42cff1ba18f25bbd0a82be7a94614d09a8881db1f3faa895017d888c"
+}

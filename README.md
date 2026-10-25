@@ -42,6 +42,11 @@ Entries support `island`, `ocean` and `archipelago`; radii/stretch, rotation, su
 Ordinary island and ocean masks depend on the world seed; archipelago placement and child outlines intentionally depend on `noise.seed` independently of the world seed.
 Invalid numeric values, overflowing dimensions/frequency ladders and unsupported generation versions are rejected.
 
+Coastal oceans use **Ocean / Deep Ocean** unless a temperature is explicitly configured. Optional root `"ocean_temperature": "temperate"`, `"cold"` or `"warm"` overrides the procedural element's ocean temperature without changing its land climate. When omitted, an element's explicit temperature applies; `standard` falls back to ordinary oceans rather than inheriting Minecraft's cold/hot delegate. The Map Editor exposes this as **Coastal ocean temperature**. `outer_ocean` independently controls water outside island influence, including deliberately configured frozen oceans.
+
+This ocean-selection correction applies to generation versions 1–3, including pinned existing worlds after restarting. Existing chunks are not rewritten; newly generated chunks may meet older ocean biomes at a boundary. Land/river/cave selection, masks and base-height algorithms are unchanged. Temperature settings are pinned with the world, so importing an edited preset into an existing world still requires `/worldgen_editor reload` and a restart.
+See [the ocean regression report](docs/ocean-temperature.md) for real seed-2 chunk comparisons and reproduction commands.
+
 On first load, the effective preset is pinned in `<world>/worldgen_editor/worldgen_editor.json`, together with the per-world flag and `generation_version`.
 Existing saves without a version retain version 1. Bundled procedural files keep version 2 unless explicitly changed; named files select their declared `generation_version`. Painted presets and editor projects select version 3 automatically when omitted. Old worlds never upgrade to version 3 automatically.
 A restart uses the pinned snapshot rather than a potentially edited global preset. For older worlds, the snapshot captures the configuration available at the first load after this update; past configurations cannot be reconstructed from a seed.
@@ -78,7 +83,7 @@ The `.wge.json` project additionally retains the seed, format version and editor
 
 ## Compatibility
 
-Version 3 was tested with the locked NeoForge 1.21.1 versions below, individually and in every requested combination. See [the verification report](docs/compatibility.md) for dependencies, actual checks and their limits. Version 1/2 generation rules remain unchanged.
+Version 3 was tested with the locked NeoForge 1.21.1 versions below, individually and in every requested combination. See [the verification report](docs/compatibility.md) for dependencies, actual checks and their limits. The explicit-temperature ocean correction above also applies to versions 1/2.
 
 | Project | Tested version |
 | --- | --- |
@@ -98,7 +103,7 @@ The optional TerraBlender adapter initializes the actual delegate and surface se
 
 The loader-ready artifact is `neoforge/build/libs/worldgen-editor-neoforge-0.4.0.jar`, also copied into `release/` after the checks pass.
 Local updates deliberately retain version **0.4.0**. With Java 21+ configured, `tools/build-test.ps1` runs the checked build and deploys it to `C:\Users\water\AppData\Roaming\ModrinthApp\profiles\NeoForge 1.21.1\mods`. `tools/deploy-test-build.ps1` deploys an already checked release, backs up the previous WGE jar under `build/test-profile-backups`, and verifies SHA-256. Other mods and user saves are left alone. Local commit IDs and jar checksums distinguish updates sharing the same version.
-The build runs config/mask golden tests, world snapshot persistence tests, generation-context tests and 576 legacy biome-selection golden cases.
+The build runs config/mask golden tests, world snapshot persistence tests, generation-context tests and 576 historical biome-selection cases. The original fixtures remain intact: default ocean expectations explicitly account for the approved temperature correction, while land and explicit-temperature expectations retain the recorded results.
 Golden fixtures were generated from commit `c792da7`; the scripts in `tools/` document regeneration.
 
 For a real NeoForge world vs preview comparison, first start the Java preview, then run:

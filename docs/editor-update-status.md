@@ -3,6 +3,10 @@
 Target: Minecraft 1.21.1 / NeoForge, generation versions 1 and 2 preserved.
 Work is local on DEV; no publishing or pushes.
 
+## Ocean temperature correction (2026-10-25)
+
+The earlier preservation statements below have one approved exception: unconfigured oceans now select Ocean / Deep Ocean instead of inheriting a cold/hot delegate, in generation versions 1–3. Explicit root `ocean_temperature` overrides element ocean temperatures; land, rivers, caves, masks and base heights retain their previous algorithms. See [ocean-temperature.md](ocean-temperature.md) for the seed-2 painted-world, restart and preview checks. The preview suite has 41 passing tests; the release remains 0.4.0.
+
 ## Named preset follow-up (2026-10-25)
 
 Named JSON presets and editor projects are discovered directly in Minecraft's World Type cycle. The preview exports a root `name` and named files. A pre-server client check prevents malformed project/preset files from leaving the integrated server half-started. The actual reported 14-tile project was imported, created, entered, saved and reopened in an isolated client, including reopening without its source file. See [preset-loading.md](preset-loading.md) for reproduction, validation and deployment details. The version remains 0.4.0; the preview suite now has 36 tests.

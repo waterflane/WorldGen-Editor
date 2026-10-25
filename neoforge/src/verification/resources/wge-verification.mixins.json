@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "org.wodichka.worldgen_editor.verification.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["GameTestSeedMixin"],
+  "injectors": {"defaultRequire": 1}
+}

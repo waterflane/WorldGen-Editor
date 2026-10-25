@@ -2,6 +2,8 @@
 
 Local NeoForge 21.1.230 / Minecraft 1.21.1, 2026-10-23. Generation versions 1 and 2 keep their previous algorithms; these composition checks target **new version 3 worlds**.
 
+Subsequent approved exception (2026-10-25): default oceans no longer inherit cold/hot delegate climates in any supported generation version. The [ocean correction report](ocean-temperature.md) records the additional Minecraft + WGE checks. The third-party matrix below records the dated composition run, not a rerun of every mod combination after that correction.
+
 ## Locked artifacts
 
 `tools/compatibility-lock.json` records author-distributed Modrinth artifact URLs, version IDs and SHA-512 hashes. These are test dependencies and are not bundled in WGE.
