@@ -3,5 +3,6 @@
   "package": "org.wodichka.worldgen_editor.neoforge.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": ["NoiseGeneratorMixin"],
+  "client": ["WorldCreationUiStateMixin", "WorldTypeEntryMixin", "MinecraftWorldLoadMixin"],
   "injectors": {"defaultRequire": 1}
 }

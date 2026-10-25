@@ -47,6 +47,10 @@ public final class IslandBiomeSource extends BiomeSource {
         return presetName;
     }
 
+    public static IslandBiomeSource forPreset(BiomeSource delegate,String file,int version,HolderGetter<Biome> biomes){
+        return new IslandBiomeSource(delegate,file,version,biomes);
+    }
+
     public static void register() {
         if (registered) {
             return;

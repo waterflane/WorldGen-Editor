@@ -79,6 +79,15 @@ loom {
 }
 tasks.named('runVerification').configure { dependsOn verificationClasses }
 
+loom.runs {
+    presetClient {
+        client()
+        source sourceSets.main
+        runDir 'build/preset-client-run'
+        vmArg '-Xmx2G'
+    }
+}
+
 if (project.hasProperty('withTerraBlender')) {
     dependencies { modRuntimeOnly files('build/verification-libs/TerraBlender-neoforge-1.21.1-4.1.0.8.jar') }
     sourceSets.verification.java.srcDir 'src/terrablenderVerification/java'
