@@ -3,6 +3,10 @@
 Target: Minecraft 1.21.1 / NeoForge, generation versions 1 and 2 preserved.
 Work is local on DEV; no publishing or pushes.
 
+## Named preset follow-up (2026-10-25)
+
+Named JSON presets and editor projects are discovered directly in Minecraft's World Type cycle. The preview exports a root `name` and named files. A pre-server client check prevents malformed project/preset files from leaving the integrated server half-started. The actual reported 14-tile project was imported, created, entered, saved and reopened in an isolated client, including reopening without its source file. See [preset-loading.md](preset-loading.md) for reproduction, validation and deployment details. The version remains 0.4.0; the preview suite now has 36 tests.
+
 ## Baseline
 
 - 2026-10-23: 21 preview Node tests passed.

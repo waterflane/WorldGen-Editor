@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-25",
+  "reproduced_error": "Editor project envelope was parsed as a flat preset; root.entries is required, then integrated-server shutdown failed before level initialization.",
+  "reported_neoforge": "21.1.249",
+  "tested_neoforge": "21.1.230",
+  "minecraft": "1.21.1",
+  "mod_version": "0.4.0",
+  "input_sha256": "041ea1277efd36a1623582c3706b66ac5d06c60a1ec8543188476f6524cf4c80",
+  "painted_tiles": 14,
+  "unit_import_of_original_project": "passed",
+  "client_checks": {
+    "json_names_displayed": true,
+    "file_added_while_creation_screen_open": true,
+    "invalid_json_returns_error_screen": true,
+    "error_screen_returns_to_world_creation": true,
+    "actual_painted_project_created_and_joined": true,
+    "reopened_with_original_preset_file_disabled": true,
+    "pinned_mask_matches_original": true,
+    "successful_joins": 2,
+    "spawn_preparation_ms": [
+      2329,
+      163
+    ]
+  },
+  "final_build": "passed",
+  "preview_tests_passed": 36,
+  "final_additional_client_check": "User stopped Computer Use with physical Escape before further interaction; earlier create/reopen checks passed.",
+  "release_sha256": "be43c334df61cc8caf544ac96fa0dee1b86b5c8a3e5680e95ae4f6c684bccf7a"
+}

@@ -3,7 +3,7 @@
 A JSON-driven island world generator for **Minecraft 1.21.1 / NeoForge 21.1.230–21.1.x**, requiring Java 21 or later.
 Fabric, Forge and Architectury API are not runtime dependencies or supported targets.
 
-Select **WGE: Islands**, **WGE: Archipelago**, **WGE: Small Island** or **WGE: Custom Map (v3)** when creating a world. Ordinary world types keep their own generators.
+Create a world, open the **World** tab and cycle **World Type** to **WGE: <map name>**. WGE discovers JSON files in `config/worldgen_editor/presets` while the screen is open. Names come from the JSON's top-level `name` field, not a required filename. Ordinary world types keep their own generators.
 Version 3 composes WGE with the effective loaded noise settings and surface rules. It controls continentalness and caps ocean/coast density while retaining the generator's other noises, caves, aquifers and biome delegate. The retained `island_final_density` codec is legacy compatibility code; current presets do not use it.
 
 ## Configuration and saved worlds
@@ -28,6 +28,9 @@ Minimal preset:
 
 ```json
 {
+  "name": "My Archipelago",
+  "enabled": true,
+  "generation_version": 3,
   "outer_ocean": "minecraft:deep_ocean",
   "entries": [
     { "name": "Spawn", "x": 0, "z": 0, "radius": 800, "temperature": "standard", "noise": { "seed": "spawn" } }
@@ -40,7 +43,7 @@ Ordinary island and ocean masks depend on the world seed; archipelago placement 
 Invalid numeric values, overflowing dimensions/frequency ladders and unsupported generation versions are rejected.
 
 On first load, the effective preset is pinned in `<world>/worldgen_editor/worldgen_editor.json`, together with the per-world flag and `generation_version`.
-Existing saves without a version retain version 1. The three procedural WGE world types keep version 2. **Custom Map (v3)** explicitly selects the new painted-map and generator-composition behavior. Old worlds never upgrade to version 3 automatically.
+Existing saves without a version retain version 1. Bundled procedural files keep version 2 unless explicitly changed; named files select their declared `generation_version`. Painted presets and editor projects select version 3 automatically when omitted. Old worlds never upgrade to version 3 automatically.
 A restart uses the pinned snapshot rather than a potentially edited global preset. For older worlds, the snapshot captures the configuration available at the first load after this update; past configurations cannot be reconstructed from a seed.
 
 Operator commands:
@@ -54,18 +57,24 @@ Operator commands:
 /worldgen_editor migrate
 ```
 
-`preset` selects and pins a preset for the current WGE world. `reload` explicitly imports that preset again from global configuration. Failed changes leave the previous snapshot active.
+`preset` selects and pins a file for the current WGE world. Its argument is the filename without the final `.json`; use quotes for spaces, for example `/worldgen_editor preset "My Map.wge"`. `reload` explicitly imports that preset again from global configuration. Failed changes leave the previous snapshot active.
 Successful changes, including enable/disable and migration, are saved for the **next world restart**. The running generation context stays immutable so existing noise caches and background generation cannot mix configurations. Commands report this restart requirement.
 `migrate` explicitly opts an old world into generation version 2; it does not opt into version 3. Changes affect future chunks after restarting and may create boundaries against existing chunks; existing chunks are never rewritten.
 A disabled or legacy empty mask delegates to the underlying generator. A version 3 preset containing an empty `painted_map` means an all-ocean canvas. In version 3, explicit preset `enabled: false` is respected in addition to the global and per-world flags.
 
 ## Draw a new world
 
-In the companion preview's **Редактор карты** tab, start with **Новый океан** or import the preview preset. Paint land/ocean, then export `custom_map.json`. Copy it to `config/worldgen_editor/presets/custom_map.json`, choose **WGE: Custom Map (v3)** and enter the exact numeric seed shown during export. The preset does not set Minecraft's seed itself.
+In the companion preview's **Map Editor** tab, start with **New Ocean** or import the preview preset. Set **Map name**, paint land/ocean, and export a preset or save an editor project. Add that JSON to `config/worldgen_editor/presets` with any safe filename. In Minecraft choose **WGE: <Map name>** and enter the numeric seed shown in the preview. A project/preset does not change Minecraft's seed automatically.
+
+The directory is scanned on a background thread about once per second. Added, edited and removed files are reflected the next time the World Type list is cycled. Sorting uses map names; duplicate names get numbered suffixes. Legacy unnamed files use a fallback label until a `name` is supplied. New files do not replace bundled presets, and no filename renaming is needed. `name` is text of 1–120 characters; island entry names are separate.
+
+Both exported presets and version 1 `.wge.json` editor projects are recognized. Project configuration is extracted before world generation; editor settings are ignored by Minecraft. Invalid/unsupported documents appear as invalid and are checked before the integrated server starts. The error screen includes the file and returns to world selection; it never silently generates another map. Once created, a world's pinned configuration remains independent of future directory changes or removal of the original preset.
+
+**What happened to Custom Map?** It was the fixed version 3 world type tied to `custom_map.json`. Its registry entry remains readable for existing worlds, but the new creation UI replaces fixed WGE types with discovered map names. The bundled empty template appears as **WGE: Empty Ocean**. Every painted JSON is its own map; no separate Custom Map choice is required.
 
 The self-contained preset combines procedural `entries` with optional `painted_map`: version 1, step 4 blocks, 64×64 samples per sparse tile. RLE triples are `[count, coverage, value, ...]`; coverage/value are unsigned 16-bit integers. Later strokes replace earlier strokes in either direction, and bilinear interpolation is shared by Java and JavaScript. Baked shore roughness does not move when changing the seed. Limits are 4096 tiles and the Minecraft coordinate bounds; there is no allocation for the whole world.
 
-The `.wge.json` project additionally retains the seed, format version and editor/view settings. It is an editor file, not a mod preset. Undo history is not exported. This first editor is for new worlds; no biome, height, structure or river painting is included.
+The `.wge.json` project additionally retains the seed, format version and editor/view settings. Minecraft can read its generation configuration directly; the smaller preset export contains only generation data. Undo history is not exported. This first editor is for new worlds; no biome, height, structure or river painting is included.
 
 ## Compatibility
 
@@ -88,6 +97,7 @@ The optional TerraBlender adapter initializes the actual delegate and surface se
 ```
 
 The loader-ready artifact is `neoforge/build/libs/worldgen-editor-neoforge-0.4.0.jar`, also copied into `release/` after the checks pass.
+Local updates deliberately retain version **0.4.0**. With Java 21+ configured, `tools/build-test.ps1` runs the checked build and deploys it to `C:\Users\water\AppData\Roaming\ModrinthApp\profiles\NeoForge 1.21.1\mods`. `tools/deploy-test-build.ps1` deploys an already checked release, backs up the previous WGE jar under `build/test-profile-backups`, and verifies SHA-256. Other mods and user saves are left alone. Local commit IDs and jar checksums distinguish updates sharing the same version.
 The build runs config/mask golden tests, world snapshot persistence tests, generation-context tests and 576 legacy biome-selection golden cases.
 Golden fixtures were generated from commit `c792da7`; the scripts in `tools/` document regeneration.
 
