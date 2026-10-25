@@ -88,7 +88,10 @@ public final class IslandBiomeRules {
 
     public Holder<Biome> oceanBiome(double islandMask, IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ) {
         boolean deep = islandMask < IslandTerrainHooks.DEEP_OCEAN_MASK;
-        ClimateBand climate = climateBand(source, delegate, blockX, blockZ);
+        // Ocean climate is explicit: a cold delegate can sit beside temperate painted land.
+        ClimateBand climate = config.oceanTemperature() == null
+                ? configuredClimateBand(source) : climateBand(config.oceanTemperature());
+        if (climate == null) climate = ClimateBand.TEMPERATE;
         List<Holder<Biome>> candidates = switch (climate) {
             case COLD -> nonNullBiomes(frozenOceanBiome, deepFrozenOceanBiome, coldOceanBiome, deepColdOceanBiome);
             case WARM -> nonNullBiomes(warmOceanBiome, lukewarmOceanBiome, deepLukewarmOceanBiome);
@@ -350,7 +353,11 @@ public final class IslandBiomeRules {
         if (source == null || source.temperature() == null || source.temperature() == IslandTemperature.STANDARD) {
             return null;
         }
-        return switch (source.temperature()) {
+        return climateBand(source.temperature());
+    }
+
+    private ClimateBand climateBand(IslandTemperature temperature) {
+        return switch (temperature) {
             case COLD -> ClimateBand.COLD;
             case TEMPERATE -> ClimateBand.TEMPERATE;
             case WARM -> ClimateBand.WARM;

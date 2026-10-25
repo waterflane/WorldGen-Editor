@@ -35,6 +35,24 @@ public final class IslandConfigLoaderTest {
         islandMaskIsDeterministic();
         presetEnabledPrecedence();
         loadsEditorProjectAsPreset();
+        oceanTemperatureRoundTrip();
+    }
+
+    private static void oceanTemperatureRoundTrip() throws Exception {
+        var root=JsonParser.parseString("{\"enabled\":true,\"entries\":[]}").getAsJsonObject();
+        assertTrue(IslandConfigLoader.parse(root).oceanTemperature()==null,"absent ocean temperature must remain default");
+        assertTrue(!IslandConfigLoader.toJson(IslandConfigLoader.parse(root)).has("ocean_temperature"),"default ocean temperature must be omitted");
+        for(String value:new String[]{"temperate","cold","warm"}) {
+            root.addProperty("ocean_temperature",value);var config=IslandConfigLoader.parse(root);
+            assertTrue(IslandConfigLoader.parse(IslandConfigLoader.toJson(config)).equals(config),"ocean temperature failed round trip");
+            assertTrue(config.withEnabled(false).oceanTemperature()==config.oceanTemperature(),"enable toggle lost ocean temperature");
+            var project=JsonParser.parseString("{\"format\":\"wge-map-project\",\"version\":1}").getAsJsonObject();project.add("config",root);
+            assertTrue(PresetDocument.parse(project).config().oceanTemperature()==config.oceanTemperature(),"project lost ocean temperature");
+        }
+        for(String invalid:new String[]{"null","3","true","\"standard\"","\"hot\"","\"\"","{}"}) {
+            root.add("ocean_temperature",JsonParser.parseString(invalid));
+            try{IslandConfigLoader.parse(root);throw new AssertionError("Invalid ocean_temperature accepted: "+invalid);}catch(IslandConfigException expected){}
+        }
     }
 
     private static void loadsEditorProjectAsPreset() throws Exception {

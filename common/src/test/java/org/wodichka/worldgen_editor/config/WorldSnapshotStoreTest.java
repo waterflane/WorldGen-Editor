@@ -24,6 +24,14 @@ public final class WorldSnapshotStoreTest {
         check(Files.readString(state).equals(previous),"invalid painted snapshot changed saved state");
         var custom=new WorldSnapshotStore.Snapshot(true,"custom_map",3,painted);WorldSnapshotStore.save(state,custom);
         check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->config).equals(custom),"painted world snapshot changed on restart");
+        var temperatureJson=IslandConfigLoader.toJson(painted);temperatureJson.addProperty("ocean_temperature","warm");
+        var temperatureSnapshot=new WorldSnapshotStore.Snapshot(true,"custom_map",3,IslandConfigLoader.parse(temperatureJson));
+        WorldSnapshotStore.save(state,temperatureSnapshot);
+        check(WorldSnapshotStore.loadOrCreate(state,"default",1,name->{throw new AssertionError("Reload read the global preset");}).equals(temperatureSnapshot),"snapshot lost ocean temperature on restart");
+        var invalidTemperature=JsonParser.parseString(Files.readString(state)).getAsJsonObject();invalidTemperature.getAsJsonObject("config").addProperty("ocean_temperature","standard");
+        Files.writeString(state,invalidTemperature.toString());
+        try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid ocean setting accepted");}
+        catch(IslandConfigException expected){check(Files.readString(state).equals(invalidTemperature.toString()),"failed ocean load rewrote snapshot");}
         for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":4}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
             Files.writeString(state,invalid);
             try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid snapshot accepted");}

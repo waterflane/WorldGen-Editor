@@ -218,6 +218,16 @@ public final class IslandConfigLoader {
         String displayName=optionalString(object,"name","","root").trim();
         if((object.has("name")&&displayName.isBlank())||displayName.length()>120||displayName.chars().anyMatch(Character::isISOControl))throw new IslandConfigException("root.name must contain 1–120 characters without control characters");
         boolean enabled = optionalBoolean(object, "enabled", false, "root");
+        IslandTemperature oceanTemperature = null;
+        if (object.has("ocean_temperature")) {
+            String value = optionalString(object, "ocean_temperature", "", "root");
+            oceanTemperature = switch (value) {
+                case "temperate" -> IslandTemperature.TEMPERATE;
+                case "cold" -> IslandTemperature.COLD;
+                case "warm" -> IslandTemperature.WARM;
+                default -> throw new IslandConfigException("root.ocean_temperature must be temperate, cold or warm; omit it for default behavior");
+            };
+        }
         String outerOcean = optionalString(object, "outer_ocean", IslandConfig.DEFAULT_OUTER_OCEAN, "root");
         if (!isValidBiomeId(outerOcean)) {
             throw new IslandConfigException("root.outer_ocean must be a biome id like minecraft:deep_ocean");
@@ -333,7 +343,7 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
-        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null,displayName);
+        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null,displayName,oceanTemperature);
     }
 
     public static JsonObject toJson(IslandConfig config) {
@@ -341,6 +351,7 @@ public final class IslandConfigLoader {
         if(!config.name().isEmpty())root.addProperty("name",config.name());
         root.addProperty("enabled", config.enabled());
         root.addProperty("outer_ocean", config.outerOcean());
+        if (config.oceanTemperature() != null) root.addProperty("ocean_temperature", config.oceanTemperature().name().toLowerCase(java.util.Locale.ROOT));
         JsonArray entries = new JsonArray();
         for (IslandEntry entry : config.entries()) {
             JsonObject value = new JsonObject();

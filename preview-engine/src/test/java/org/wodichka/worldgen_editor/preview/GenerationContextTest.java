@@ -8,6 +8,18 @@ public final class GenerationContextTest {
     static void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     public static void main(String[] args)throws Exception {
         var registries=PreviewWorld.bootstrap();var biomes=registries.registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
+        OceanTemperatureTest.run(biomes);
+        // Regression: an inherited cold delegate must not freeze an unconfigured coastline.
+        for(int version:new int[]{1,2,3}) {
+            var normalConfig=IslandConfigLoader.parse(JsonParser.parseString("{\"enabled\":true,\"entries\":[{\"x\":0,\"z\":0,\"radius\":500}]}"));
+            var normal=new GenerationContext(2,normalConfig,version,biomes);
+            var normalSource=normal.mask().sampleInfo(0,0).landSource();
+            for(var delegateKey:java.util.List.of(Biomes.FROZEN_OCEAN,Biomes.COLD_OCEAN,Biomes.SNOWY_PLAINS,Biomes.WARM_OCEAN)) {
+                var delegate=biomes.getHolderOrThrow(delegateKey);
+                check(normal.biomeRules().oceanBiome(.2,normalSource,delegate,-545,-419).is(Biomes.OCEAN),"unconfigured coastline inherited temperature in v"+version+" from "+delegateKey.location());
+                check(normal.biomeRules().oceanBiome(.04,normalSource,delegate,-545,-419).is(Biomes.DEEP_OCEAN),"unconfigured deep ocean inherited temperature in v"+version);
+            }
+        }
         JsonObject input=JsonParser.parseString("{\"enabled\":true,\"entries\":[{\"x\":0,\"z\":0,\"radius\":500,\"temperature\":\"warm\"}]}").getAsJsonObject();
         var config=IslandConfigLoader.parse(input);var source=new IslandMask(config,42).sampleInfo(0,0).landSource();
         var fixed=new GenerationContext(42,config,2,biomes);var legacy=new GenerationContext(42,config,1,biomes);
@@ -132,7 +144,12 @@ public final class GenerationContextTest {
                 int x=row.get("x").getAsInt(),z=row.get("z").getAsInt();double mask=row.get("mask").getAsDouble();
                 var land=snapshot.biomeRules().landBiome(mask,info,delegate,x,z);var sea=snapshot.biomeRules().oceanBiome(mask,info,delegate,x,z);
                 check(land.unwrapKey().orElseThrow().location().toString().equals(row.get("land").getAsString()),"legacy land biome changed");
-                check(sea.unwrapKey().orElseThrow().location().toString().equals(row.get("ocean").getAsString()),"legacy ocean biome changed");
+                // The approved ocean fix applies to old versions too. Keep historical fixtures intact:
+                // only unconfigured oceans intentionally stop inheriting the delegate's climate.
+                String expectedOcean=row.get("temperature").getAsString().equals("standard")
+                        ? mask<IslandTerrainHooks.DEEP_OCEAN_MASK?"minecraft:deep_ocean":"minecraft:ocean"
+                        : row.get("ocean").getAsString();
+                check(sea.unwrapKey().orElseThrow().location().toString().equals(expectedOcean),"explicit legacy ocean biome or corrected default changed");
             }
         }
         // Simulate the server facade with an isolated state file; a live graph has cached noise cells.

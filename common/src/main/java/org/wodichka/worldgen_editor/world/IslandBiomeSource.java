@@ -76,8 +76,7 @@ public final class IslandBiomeSource extends BiomeSource {
             return context.biomeRules().outerOceanBiome();
         var source=sample.oceanSource()!=null ? sample.oceanSource()
                 : sample.archipelagoSource()!=null ? sample.archipelagoSource() : sample.landSource();
-        if(source==null || source.temperature()==null || source.temperature()==org.wodichka.worldgen_editor.config.IslandTemperature.STANDARD)
-            return null;
+        // All WGE ocean choices now depend on explicit config and mask, never the delegate or Y.
         return context.biomeRules().oceanBiome(sample.value(),source,null,x,z);
     }
 
