@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-26",
+  "seed": "3",
+  "columns_per_variant": 8505,
+  "custom": [
+    [
+      328,
+      -168,
+      49,
+      62,
+      "minecraft:jungle",
+      1,
+      63.8060689279047
+    ],
+    [
+      96,
+      -24,
+      63,
+      63,
+      "minecraft:river",
+      1,
+      16.778512876147882
+    ]
+  ],
+  "without_custom": [
+    [
+      328,
+      -168,
+      63,
+      63,
+      "minecraft:jungle",
+      1,
+      null
+    ],
+    [
+      96,
+      -24,
+      56,
+      62,
+      "minecraft:river",
+      1,
+      null
+    ]
+  ],
+  "columns": [
+    "x",
+    "z",
+    "solid_base_height",
+    "surface_height",
+    "biome_above_solid",
+    "geometric_mask",
+    "coast_distance"
+  ],
+  "findings": [
+    "A river column at 96,-24 is raised from 56 to 63 by the post-cave floor.",
+    "The water-filled column at 328,-168 is jungle with geometric land mask 1, not a river."
+  ]
+}

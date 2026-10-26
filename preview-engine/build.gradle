@@ -42,6 +42,18 @@ tasks.register('runContextTests', JavaExec) {
 }
 check.dependsOn runContextTests
 
+tasks.register('auditCoast', JavaExec) {
+    dependsOn testClasses, ':common:classes'
+    classpath = sourceSets.test.runtimeClasspath + project(':common').sourceSets.main.output
+    mainClass = 'org.wodichka.worldgen_editor.preview.CoastAudit'
+    maxHeapSize = '512m'
+    workingDir rootProject.layout.buildDirectory.dir('preview-tests')
+    doFirst { workingDir.mkdirs() }
+    ['coastAuditWorld':'wge.auditWorld','coastAuditSource':'wge.auditSource','coastAuditOutput':'wge.auditOutput'].each { key,value ->
+        if (project.hasProperty(key)) systemProperty value, project.property(key).toString()
+    }
+}
+
 // NeoForge supplies convention biome tags even with no third-party mods installed.
 // Copy only data; the standalone runtime never loads NeoForge classes or a mod loader.
 def neoForgeBiomeTags = tasks.register('prepareNeoForgeBiomeTags', Copy) {
