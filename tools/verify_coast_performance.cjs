@@ -1,9 +1,9 @@
 /* Local HTTP/worker checks; never reads or changes user saves. */
 const fs=require('node:fs'),path=require('node:path');
 const base='http://127.0.0.1:8765/api/',client='coast-performance-'+Date.now();
-async function post(route,body){if(route==='session')body={...body,coast_revision:2};const start=performance.now(),response=await fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,value:await response.json(),wall_ms:performance.now()-start};}
+async function post(route,body){if(route==='session')body={...body,coast_revision:3};const start=performance.now(),response=await fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,value:await response.json(),wall_ms:performance.now()-start};}
 (async()=>{
- const info=await (await fetch(base+'info')).json();if(!info.capabilities.includes('coast_smoothing_v1'))throw new Error('Prepare the updated Java preview first');
+ const info=await (await fetch(base+'info')).json();if(!info.capabilities.includes('natural_coast_v1'))throw new Error('Prepare the updated Java preview first');
  const config={name:'Coast benchmark '+client,enabled:true,entries:[{name:'Performance',x:0,z:0,radius:220,roughness:.12,coast:{beach_width_blocks:32,shallow_ocean_width_blocks:192}},{type:'ocean',x:0,z:0,radius:65,roughness:0}]};
  const stale=await fetch(base+'session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed:'2',generation_version:4,config,client})});
  if(stale.status!==400||!String((await stale.json()).error).includes('reload'))throw new Error('Old coast clients must be rejected explicitly');

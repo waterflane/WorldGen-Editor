@@ -21,8 +21,10 @@ public final class CoastAudit {
             Files.writeString(Path.of("coast-repro.json"),new Gson().toJson(fixture));
         }else fixture=JsonParser.parseString(Files.readString(Path.of(System.getProperty("wge.auditSource","../../common/src/test/resources/natural-coast-repro.json")))).getAsJsonObject();
         long seed=Long.parseLong(fixture.get("seed").getAsString());var report=new JsonObject();report.addProperty("seed",Long.toString(seed));
+        report.add("columns",JsonParser.parseString("[\"x\",\"z\",\"solid_base_height\",\"surface_height\",\"biome_above_solid\",\"geometric_mask\",\"coast_distance\",\"coast_influence\",\"depth_at_sea\",\"pre_cave_height_estimate\"]"));
         var access=LevelHeightAccessor.create(-64,384);
         for(boolean enabled:new boolean[]{true,false}){
+            if(!enabled&&Boolean.getBoolean("wge.auditCustomOnly"))continue;
             var config=fixture.getAsJsonObject("config").deepCopy();
             if(!enabled)for(var e:config.getAsJsonArray("entries"))e.getAsJsonObject().remove("coast");
             var world=new PreviewWorld(config,seed,4);
@@ -34,7 +36,10 @@ public final class CoastAudit {
                 for(int y=319;y>=-64;y--){var state=column.getBlock(y);if(!state.isAir()&&state.getFluidState().isEmpty()){floor=y;break;}}
                 int surface=world.surfaceY(x,z,8);var sample=world.context().mask().sampleInfo(x,z);
                 var row=new JsonArray();row.add(x);row.add(z);row.add(floor);row.add(surface);row.add(world.biomeId(x,floor+1,z));row.add(raw.sample(x,z));
-                row.add(sample.coast()==null||!Double.isFinite(sample.coast().distance())?JsonNull.INSTANCE:new JsonPrimitive(sample.coast().distance()));rows.add(row);
+                row.add(sample.coast()==null||!Double.isFinite(sample.coast().distance())?JsonNull.INSTANCE:new JsonPrimitive(sample.coast().distance()));
+                row.add(org.wodichka.worldgen_editor.world.NaturalCoast.influence(sample.coast()));
+                double depth=world.random().router().depth().compute(new net.minecraft.world.level.levelgen.DensityFunction.SinglePointContext(x,world.generator().getSeaLevel(),z));
+                row.add(depth);row.add(org.wodichka.worldgen_editor.world.NaturalCoast.approximateHeight(depth,world.generator().getSeaLevel()));rows.add(row);
             }
             report.add(enabled?"custom":"original",rows);
             System.out.println("Audited "+rows.size()+" columns, custom coast="+enabled);

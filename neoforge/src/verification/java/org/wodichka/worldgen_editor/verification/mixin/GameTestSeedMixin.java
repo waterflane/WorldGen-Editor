@@ -9,5 +9,5 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(GameTestServer.class)
 abstract class GameTestSeedMixin {
     @ModifyArg(method="<clinit>",at=@At(value="INVOKE",target="Lnet/minecraft/world/level/levelgen/WorldOptions;<init>(JZZ)V"),index=0)
-    private static long oceanSeed(long original) { return 2L; }
+    private static long oceanSeed(long original) { return Long.getLong("wge.verificationSeed",2L); }
 }

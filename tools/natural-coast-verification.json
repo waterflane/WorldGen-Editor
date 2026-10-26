@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-26",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mod_version": "0.4.0",
+  "generation_version": 4,
+  "coast_revision": 3,
+  "preview_tests_passed": 68,
+  "java_javascript_mask_samples": 3237,
+  "mask_tolerance": 1e-12,
+  "legacy_biome_cases": 576,
+  "legacy_multi_preset_height_columns": 576,
+  "continuous_depth_profiles": 4,
+  "small_water_and_strait_seeds": [
+    "0",
+    "2",
+    "3",
+    "-9223372036854775808"
+  ],
+  "small_water_and_strait_columns": 16,
+  "audit": {
+    "seed": "3",
+    "before_custom_columns": 8505,
+    "before_control_columns": 8505,
+    "after_custom_columns": 8505,
+    "columns": [
+      "x",
+      "z",
+      "solid_base_height",
+      "surface_height",
+      "biome_above_solid",
+      "geometric_mask",
+      "coast_distance",
+      "coast_influence",
+      "depth_at_sea",
+      "pre_cave_height_estimate"
+    ],
+    "reported_before": [
+      [
+        328,
+        -168,
+        49,
+        62,
+        "minecraft:jungle",
+        1,
+        63.8060689279047
+      ],
+      [
+        96,
+        -24,
+        63,
+        63,
+        "minecraft:river",
+        1,
+        16.778512876147882
+      ]
+    ],
+    "reported_after": [
+      [
+        328,
+        -168,
+        63,
+        63,
+        "minecraft:jungle",
+        1,
+        63.8060689279047,
+        0.8607322787996766,
+        0.002271133125759661,
+        66.49070504009724
+      ],
+      [
+        96,
+        -24,
+        55,
+        62,
+        "minecraft:river",
+        1,
+        16.778512876147882,
+        0.9890540637555746,
+        -0.08466280561595359,
+        55.36316088115794
+      ]
+    ],
+    "pre_cave_height_is_an_estimate": true
+  },
+  "real_world_cases": [
+    {
+      "run": "natural-coast-repro-3-final",
+      "seed": 3,
+      "biome_samples": 108,
+      "base_height_samples": 27,
+      "fast_surface_samples": 27,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_samples": 642,
+      "finished_columns": 578,
+      "extra_inland_beaches": 0,
+      "reported_river_floor": 55,
+      "reported_jungle_floor": 63
+    },
+    {
+      "run": "natural-coast-shapes-7-final",
+      "seed": 2,
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_samples": 642,
+      "finished_columns": 0
+    },
+    {
+      "run": "natural-coast-shapes-8-final",
+      "seed": 2,
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_samples": 642,
+      "finished_columns": 0
+    },
+    {
+      "run": "natural-coast-shapes-9-final",
+      "seed": 2,
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_samples": 642,
+      "finished_columns": 0
+    }
+  ],
+  "biome_comparisons": 384,
+  "base_height_comparisons": 96,
+  "finished_surface_columns": 578,
+  "separate_process_reopen": true,
+  "performance": {
+    "date": "2026-10-26",
+    "profile": "Minecraft + WGE",
+    "session_ms": 14.087400000000002,
+    "first_coarse_tile_ms": 377.4268,
+    "repeat_tile_ms": 13.851399999999956,
+    "java_cancel_ms": 19.838300000000004,
+    "java_cancelled": true,
+    "worker_cancel_ms": 8.855699999999956,
+    "changed_width_new_session": true,
+    "stale_client_rejected": true,
+    "followup_after_cancel": true,
+    "heap_limit_mib": 512,
+    "heap_used_mib": 148,
+    "cold_startup_seconds": 5.19
+  },
+  "runtime_classpath_bytes": 60267998,
+  "runtime_excludes_jre": true,
+  "process_working_set_bytes": 446947328,
+  "process_peak_working_set_bytes": 487747584,
+  "main_thread_browser_trace_measured": false,
+  "existing_user_saves_modified": false,
+  "release_sha256": "7d9f39f4f6dc20b543a8809d013091f4355407f51b0c5f20403395166a699e3f"
+}

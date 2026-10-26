@@ -39,7 +39,8 @@ final class OceanVerification {
         ((IslandBiomeSource)baselineGenerator.getBiomeSource()).bind(baselineBinding);
         baselineGenerator.generatorSettings().value().noiseRouter().mapAll(function->{
             if(function instanceof IslandContinentsFunction islands)islands.bind(baselineBinding);
-            if(function instanceof IslandCoastFunction coast)coast.bind(baselineBinding);return function;
+            if(function instanceof IslandCoastFunction coast)coast.bind(baselineBinding);
+            if(function instanceof IslandDepthFunction depth)depth.bind(baselineBinding);return function;
         });
         var baselineNoise=RandomState.create(baselineGenerator.generatorSettings().value(),level.registryAccess().lookupOrThrow(Registries.NOISE),2);
         int biomeChecks=0,heightChecks=0,normalOceanChecks=0;
@@ -72,7 +73,8 @@ final class OceanVerification {
         var reloadBinding=new GenerationBinding();reloadBinding.set(new GenerationContext(2,snapshot.config(),3,context.biomes()));((IslandBiomeSource)restored.getBiomeSource()).bind(reloadBinding);
         restored.generatorSettings().value().noiseRouter().mapAll(function->{
             if(function instanceof IslandContinentsFunction islands)islands.bind(reloadBinding);
-            if(function instanceof IslandCoastFunction coast)coast.bind(reloadBinding);return function;
+            if(function instanceof IslandCoastFunction coast)coast.bind(reloadBinding);
+            if(function instanceof IslandDepthFunction depth)depth.bind(reloadBinding);return function;
         });
         var reloadNoise=RandomState.create(restored.generatorSettings().value(),level.registryAccess().lookupOrThrow(Registries.NOISE),2);
         var biomeManager=new net.minecraft.world.level.biome.BiomeManager((qx,qy,qz)->restored.getBiomeSource().getNoiseBiome(qx,qy,qz,reloadNoise.sampler()),net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(2));
