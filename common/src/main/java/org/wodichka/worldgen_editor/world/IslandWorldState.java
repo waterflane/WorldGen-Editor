@@ -46,12 +46,16 @@ public final class IslandWorldState {
             binding = new GenerationBinding();
             binding.set(new GenerationContext(server.getWorldData().worldGenOptions().seed(), effectiveConfig(), version, biomes));
             source.bind(binding);
+            source.seaLevel(generator.getSeaLevel());
+            int[] depthNodes={0};
             generator.generatorSettings().value().noiseRouter().mapAll(function -> {
                 if (function instanceof IslandContinentsFunction island) island.bind(binding);
                 if (function instanceof IslandDensityFunction island) island.bind(binding);
                 if (function instanceof IslandCoastFunction island) island.bind(binding);
+                if (function instanceof IslandDepthFunction island) {island.bind(binding);depthNodes[0]++;}
                 return function;
             });
+            if(NaturalCoast.active(binding.get())&&depthNodes[0]==0)throw new IllegalArgumentException("Custom coasts require a nonconstant pre-cave depth graph in the loaded generator");
             save(storedConfig, worldEnabled, preset, version);
         } catch (Exception error) {
             // Never silently generate a different world when a pinned snapshot cannot be loaded.

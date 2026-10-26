@@ -13,8 +13,18 @@ public final class IslandNoiseComposition {
         // mapAll expands references into direct holders; compare the canonical subtree, not registry identity.
         final DensityFunction continents=target;
         if(continents.minValue()==continents.maxValue())throw new IllegalArgumentException("Unsupported constant continentalness graph for WGE version 3");
+        DensityFunction depth=router.depth().mapAll(f->f);
+        while(depth instanceof DensityFunctions.HolderHolder holder)depth=holder.function().value();
+        final DensityFunction depthTarget=depth,ridges=router.ridges();
+        int[] depthReplaced={0};
+        // Match depth before inserting identity-bearing WGE functions into its children.
+        var withDepth=router.mapAll(function->{
+            if(depthTarget.minValue()!=depthTarget.maxValue()&&function.equals(depthTarget)){depthReplaced[0]++;return new IslandDepthFunction(function,ridges,original.seaLevel());}
+            return function;
+        });
+        if(depthReplaced[0]==0&&depthTarget.minValue()!=depthTarget.maxValue())throw new IllegalArgumentException("Could not locate the pre-cave depth graph for WGE");
         int[] replaced={0};
-        var mapped=router.mapAll(function->{
+        var mapped=withDepth.mapAll(function->{
             if(function.equals(continents)){replaced[0]++;return new IslandContinentsFunction(function);}
             return function;
         });

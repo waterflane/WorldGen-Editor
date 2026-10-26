@@ -144,6 +144,34 @@ public final class IslandBiomeRules {
         return null;
     }
 
+    /** Uses pre-cave depth, never a chunk heightmap or recursively generated surface. */
+    public Holder<Biome> naturalCoastBiome(CoastField.Sample coast,Holder<Biome> delegate,int x,int z,
+                                          IslandMask.SourceInfo climateSource,double surface,int seaLevel) {
+        if(isUnderground(delegate)||isRiver(delegate))return null;
+        double d=coast.distance();var source=climateSource!=null?climateSource:coast.source();
+        // A natural coast can deviate slightly from the drawn boundary. Keep narrow water bodies open.
+        if((d<0&&surface<seaLevel+2)||(d>=0&&d<16&&surface<seaLevel-2)){
+            var water=new CoastField.Sample(-Math.max(1e-9,Math.abs(d)),coast.source(),coast.variation());
+            return customCoastBiome(water,delegate,x,z,source);
+        }
+        double width=coast.profile().beachWidthBlocks()*(1+.15*coast.variation());
+        if(width>0&&d>=-8&&d<=width&&surface>=seaLevel-2&&surface<=seaLevel+12){
+            var beach=configuredClimateBand(source)==ClimateBand.COLD?snowyBeachBiome:beachBiome;
+            if(!isExcluded(beach,source))return beach;
+        }
+        // Do not let the original continentalness beach create a second inland sand ring.
+        if(isOceanBiome(delegate)||isBeach(delegate)){
+            ClimateBand climate=configuredClimateBand(source);
+            var candidates=climate==ClimateBand.COLD?nonNullBiomes(snowyPlainsBiome,taigaBiome)
+                    :climate==ClimateBand.WARM?nonNullBiomes(savannaBiome,jungleBiome,desertBiome)
+                    :nonNullBiomes(plainsBiome,forestBiome,meadowBiome);
+            return firstNonNull(pickAllowed(candidates,source,x,z),plainsBiome);
+        }
+        return null;
+    }
+
+    public boolean isBeach(Holder<Biome> biome){return biome!=null&&(biome.is(Biomes.BEACH)||biome.is(Biomes.SNOWY_BEACH));}
+
     public Holder<Biome> outerOceanBiome() {
         return firstNonNull(outerOceanBiome, deepOceanBiome, oceanBiome);
     }

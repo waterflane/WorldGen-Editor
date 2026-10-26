@@ -23,13 +23,9 @@ public final class IslandCoastFunction implements DensityFunction {
     public double compute(FunctionContext point){
         double original=delegate.compute(point);var context=binding.get();
         if(context==null||context.generationVersion()<3||context.mask().isEmpty())return original;
+        // Natural v4 coasts are composed into depth before caves. Final density stays untouched.
+        if(NaturalCoast.active(context))return original;
         var sample=context.mask().sampleInfo(point.blockX(),point.blockZ());double mask=sample.value();
-        if(context.generationVersion()>=4&&sample.coast()!=null){
-            var envelope=CoastTerrain.envelope(sample.coast(),seaLevel);
-            if(envelope!=null)return CoastTerrain.shape(original,point.blockY(),envelope);
-            if(sample.coast().distance()>=0)return original;
-            return Math.min(original,(seaLevel-43.2-point.blockY())/8);
-        }
         if(mask>=.72)return original;
         double ceiling=(seaLevel+(mask-.54)*80-point.blockY())/8;
         double weight=Math.max(0,Math.min(1,(.72-mask)/.14));

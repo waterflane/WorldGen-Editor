@@ -35,6 +35,7 @@ public final class IslandBiomeSource extends BiomeSource {
     private final int generationVersion;
     private final HolderGetter<Biome> biomeGetter;
     private final GenerationBinding binding = new GenerationBinding();
+    private int seaLevel=63;
 
     private IslandBiomeSource(BiomeSource delegate, String presetName, int generationVersion, HolderGetter<Biome> biomeGetter) {
         this.delegate = delegate;
@@ -64,11 +65,13 @@ public final class IslandBiomeSource extends BiomeSource {
     public int generationVersion() { return generationVersion; }
     public GenerationBinding binding() { return binding; }
     public void bind(GenerationBinding value) { binding.attach(value); }
+    public void seaLevel(int value){seaLevel=value;}
 
     /** Returns a biome only if this column's WGE rule is independent of Y and the delegate. */
     public Holder<Biome> heightIndependentBiome(int quartX,int quartZ) {
         GenerationContext context=binding.get();
         if(context==null || context.mask().isEmpty())return null;
+        if(NaturalCoast.active(context))return null;
         int x=QuartPos.toBlock(quartX),z=QuartPos.toBlock(quartZ);
         var sample=context.mask().sampleInfo(x,z);
         if(sample.coast()!=null) {
@@ -116,6 +119,13 @@ public final class IslandBiomeSource extends BiomeSource {
         int blockZ = QuartPos.toBlock(quartZ);
         IslandMask.SampleInfo sample = mask.sampleInfo(blockX, blockZ);
         Holder<Biome> delegateBiome = delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+        if(NaturalCoast.active(context)&&sample.coast()!=null){
+            double surface=NaturalCoast.approximateHeight(sampler.depth().compute(new net.minecraft.world.level.levelgen.DensityFunction.SinglePointContext(blockX,seaLevel,blockZ)),seaLevel);
+            var selected=context.biomeRules().naturalCoastBiome(sample.coast(),delegateBiome,blockX,blockZ,coastClimateSource(sample),surface,seaLevel);
+            if(selected!=null)return selected;
+            var source=sample.landSource()!=null?sample.landSource():sample.archipelagoSource();
+            return context.biomeRules().landBiome(Math.max(IslandTerrainHooks.LAND_MASK,mask.geometry(blockX,blockZ)),source,delegateBiome,blockX,blockZ);
+        }
         if(sample.coast()!=null) {
             var coast=context.biomeRules().customCoastBiome(sample.coast(),delegateBiome,blockX,blockZ,coastClimateSource(sample));
             if(coast!=null)return coast;

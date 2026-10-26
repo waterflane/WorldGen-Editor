@@ -27,6 +27,9 @@ public final class IslandMask {
     private final ThreadLocal<java.util.Map<Long,SampleInfo>> columnSamples=ThreadLocal.withInitial(()->new java.util.LinkedHashMap<>(128,.75f,true){
         protected boolean removeEldestEntry(java.util.Map.Entry<Long,SampleInfo> entry){return size()>512;}
     });
+    private final ThreadLocal<java.util.Map<Long,Double>> geometryColumns=ThreadLocal.withInitial(()->new java.util.LinkedHashMap<>(128,.75f,true){
+        protected boolean removeEldestEntry(java.util.Map.Entry<Long,Double> entry){return size()>512;}
+    });
 
     public IslandMask(IslandConfig config, long worldSeed) {
         paintedMap=config.paintedMap();
@@ -70,6 +73,14 @@ public final class IslandMask {
         return sampleInfo(blockX, blockZ).value();
     }
 
+    /** Saved geometry only; coastal display bands must not redefine land or ocean. */
+    public double geometry(double blockX,double blockZ){
+        if(blockX!=(int)blockX||blockZ!=(int)blockZ)return rawInfo(blockX,blockZ).value();
+        long key=((long)(int)blockX<<32)^((int)blockZ&0xffffffffL);var cache=geometryColumns.get();
+        var value=cache.get(key);if(value!=null)return value;
+        double result=rawInfo(blockX,blockZ).value();cache.put(key,result);return result;
+    }
+
     public SampleInfo sampleInfo(double blockX, double blockZ) {
         if(blockX==(int)blockX && blockZ==(int)blockZ){
             long key=((long)(int)blockX<<32)^((int)blockZ&0xffffffffL);
@@ -81,11 +92,12 @@ public final class IslandMask {
 
     private SampleInfo computeInfo(double blockX,double blockZ) {
         var raw=rawInfo(blockX,blockZ);
+        if(blockX==(int)blockX&&blockZ==(int)blockZ)geometryColumns.get().put(((long)(int)blockX<<32)^((int)blockZ&0xffffffffL),raw.value());
         if(coastField==null)return raw;
         var coast=coastField.sample(blockX,blockZ,raw);
         if(coast!=null){
             double relief=coastNoise.noise(blockX/192,0,blockZ/192)*.6+coastNoise.noise(blockX/64,11,blockZ/64)*.3+coastNoise.noise(blockX/24,27,blockZ/24)*.1;
-            coast=new CoastField.Sample(coast.distance(),coast.source(),Math.max(-1,Math.min(1,relief)));
+            coast=new CoastField.Sample(coast.distance(),coast.source(),Math.max(-1,Math.min(1,relief)),coast.terrainProgress(),coast.bandProgress(),coast.recoveryProgress());
         }
         return coast==null?raw:new SampleInfo(coast.value(raw.value()),raw.landSource(),raw.oceanSource(),raw.archipelagoSource(),coast,raw.coastOwner());
     }

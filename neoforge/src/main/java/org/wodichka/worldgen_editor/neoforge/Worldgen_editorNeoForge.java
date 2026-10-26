@@ -14,6 +14,7 @@ import org.wodichka.worldgen_editor.world.IslandBiomeSource;
 import org.wodichka.worldgen_editor.world.IslandContinentsFunction;
 import org.wodichka.worldgen_editor.world.IslandDensityFunction;
 import org.wodichka.worldgen_editor.world.IslandCoastFunction;
+import org.wodichka.worldgen_editor.world.IslandDepthFunction;
 import org.wodichka.worldgen_editor.world.IslandGeneratorCodec;
 import org.wodichka.worldgen_editor.world.IslandWorldState;
 
@@ -42,6 +43,7 @@ public final class Worldgen_editorNeoForge {
         event.register(Registries.DENSITY_FUNCTION_TYPE, IslandContinentsFunction.ID, () -> IslandContinentsFunction.MAP_CODEC);
         event.register(Registries.DENSITY_FUNCTION_TYPE, IslandDensityFunction.ID, () -> IslandDensityFunction.MAP_CODEC);
         event.register(Registries.DENSITY_FUNCTION_TYPE, IslandCoastFunction.ID, () -> IslandCoastFunction.MAP_CODEC);
+        event.register(Registries.DENSITY_FUNCTION_TYPE, IslandDepthFunction.ID, () -> IslandDepthFunction.MAP_CODEC);
         event.register(Registries.CHUNK_GENERATOR, IslandGeneratorCodec.ID, () -> IslandGeneratorCodec.CODEC);
     }
 

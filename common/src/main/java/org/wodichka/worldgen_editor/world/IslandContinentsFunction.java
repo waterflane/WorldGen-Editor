@@ -86,7 +86,13 @@ public final class IslandContinentsFunction implements DensityFunction {
             return vanilla;
         }
 
-        double island = mask.sample(context.blockX(), context.blockZ());
+        var sample=mask.sampleInfo(context.blockX(),context.blockZ());
+        double island=NaturalCoast.active(snapshot)?mask.geometry(context.blockX(),context.blockZ()):sample.value();
+        double shaped=legacyShape(island,vanilla);
+        return NaturalCoast.active(snapshot)&&sample.coast()!=null?NaturalCoast.continents(shaped,sample.coast()):shaped;
+    }
+
+    private static double legacyShape(double island,double vanilla){
         if (island <= IslandTerrainHooks.FULL_OCEAN_MASK) {
             double ocean = lerp(-0.82D, -0.46D, smoothstep(IslandTerrainHooks.DEEP_OCEAN_MASK, IslandTerrainHooks.FULL_OCEAN_MASK, island));
             return Math.min(vanilla, ocean);
