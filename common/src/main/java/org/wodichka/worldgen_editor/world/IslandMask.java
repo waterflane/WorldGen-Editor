@@ -17,6 +17,7 @@ public final class IslandMask {
     private static final int ARCHIPELAGO_MAX_ATTEMPTS_PER_ISLAND = 64;
 
     private final CoastField coastField;
+    private final net.minecraft.world.level.levelgen.synth.ImprovedNoise coastNoise;
     private final List<CompiledIsland> landShapes;
     private final List<CompiledIsland> oceanShapes;
     private final List<CompiledParent> archipelagoParents;
@@ -29,6 +30,7 @@ public final class IslandMask {
 
     public IslandMask(IslandConfig config, long worldSeed) {
         paintedMap=config.paintedMap();
+        coastNoise=config.hasCoasts()?new net.minecraft.world.level.levelgen.synth.ImprovedNoise(new net.minecraft.world.level.levelgen.XoroshiroRandomSource(worldSeed^0x574745434f415354L)):null;
         List<CompiledIsland> land = new ArrayList<>();
         List<CompiledIsland> ocean = new ArrayList<>();
         List<CompiledParent> parents = new ArrayList<>();
@@ -81,6 +83,10 @@ public final class IslandMask {
         var raw=rawInfo(blockX,blockZ);
         if(coastField==null)return raw;
         var coast=coastField.sample(blockX,blockZ,raw);
+        if(coast!=null){
+            double relief=coastNoise.noise(blockX/192,0,blockZ/192)*.6+coastNoise.noise(blockX/64,11,blockZ/64)*.3+coastNoise.noise(blockX/24,27,blockZ/24)*.1;
+            coast=new CoastField.Sample(coast.distance(),coast.source(),Math.max(-1,Math.min(1,relief)));
+        }
         return coast==null?raw:new SampleInfo(coast.value(raw.value()),raw.landSource(),raw.oceanSource(),raw.archipelagoSource(),coast,raw.coastOwner());
     }
 

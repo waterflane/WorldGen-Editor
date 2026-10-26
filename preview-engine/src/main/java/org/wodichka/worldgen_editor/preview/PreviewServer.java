@@ -31,7 +31,7 @@ public final class PreviewServer {
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.createContext("/api/info", exchange -> handle(exchange, () -> {
             JsonObject value = new JsonObject(); value.addProperty("protocol",2);value.addProperty("minecraft","1.21.1");
-            value.addProperty("generation_version",4);value.add("supported_generation_versions",JsonParser.parseString("[1,2,3,4]"));value.add("capabilities",JsonParser.parseString("[\"painted_map_v1\",\"vanilla_wge_only\",\"ocean_temperature_v1\",\"island_outline_v1\",\"coast_profile_v1\"]"));value.addProperty("resources",RESOURCES);
+            value.addProperty("generation_version",4);value.add("supported_generation_versions",JsonParser.parseString("[1,2,3,4]"));value.add("capabilities",JsonParser.parseString("[\"painted_map_v1\",\"vanilla_wge_only\",\"ocean_temperature_v1\",\"island_outline_v1\",\"coast_profile_v1\",\"coast_smoothing_v1\"]"));value.addProperty("resources",RESOURCES);
             value.addProperty("workers",WORKERS);
             value.addProperty("sampling_engine",Boolean.getBoolean("wge.preview.referenceSampler")?"reference":"column");
             value.addProperty("heap_used_mib",(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1048576);return value;
@@ -70,6 +70,10 @@ public final class PreviewServer {
             throw new IllegalArgumentException("generation_version must be a number");
         int version=request.has("generation_version") ? integer(request,"generation_version",1,4) : 2;
         JsonElement config=request.get("config");
+        boolean customCoast=config!=null&&config.isJsonObject()&&config.getAsJsonObject().has("entries")&&config.getAsJsonObject().get("entries").isJsonArray()
+                &&java.util.stream.StreamSupport.stream(config.getAsJsonObject().getAsJsonArray("entries").spliterator(),false).anyMatch(entry->entry.isJsonObject()&&entry.getAsJsonObject().has("coast"));
+        if(customCoast&&(!request.has("coast_revision")||integer(request,"coast_revision",1,2)!=2))
+            throw new IllegalArgumentException("Coast rules changed; reload the preview page to use smooth coast revision 2");
         String id=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest((RESOURCES+":"+version+":"+seed+":"+config).getBytes(StandardCharsets.UTF_8)));
         if (!SESSIONS.containsKey(id)) {
             var cache=new LinkedHashMap<String,JsonObject>(32,.75f,true) {

@@ -24,22 +24,16 @@ public final class IslandCoastFunction implements DensityFunction {
         double original=delegate.compute(point);var context=binding.get();
         if(context==null||context.generationVersion()<3||context.mask().isEmpty())return original;
         var sample=context.mask().sampleInfo(point.blockX(),point.blockZ());double mask=sample.value();
+        if(context.generationVersion()>=4&&sample.coast()!=null){
+            var envelope=CoastTerrain.envelope(sample.coast(),seaLevel);
+            if(envelope!=null)return CoastTerrain.shape(original,point.blockY(),envelope);
+            if(sample.coast().distance()>=0)return original;
+            return Math.min(original,(seaLevel-43.2-point.blockY())/8);
+        }
         if(mask>=.72)return original;
         double ceiling=(seaLevel+(mask-.54)*80-point.blockY())/8;
         double weight=Math.max(0,Math.min(1,(.72-mask)/.14));
         double shaped=original+(Math.min(original,ceiling)-original)*weight;
-        if(context.generationVersion()>=4&&sample.coast()!=null) {
-            var coast=sample.coast();double distance=coast.distance(),bandWeight=0;
-            if(distance>=0&&coast.profile().beachWidthBlocks()>0)
-                bandWeight=Math.max(0,Math.min(1,(coast.profile().beachWidthBlocks()+64-distance)/64));
-            else if(distance<0&&coast.profile().shallowOceanWidthBlocks()>0)
-                bandWeight=Math.max(0,Math.min(1,(coast.profile().shallowOceanWidthBlocks()+64+distance)/64));
-            // Shape a solid upper seabed/beach layer, while retaining original caves
-            // below it. Only explicitly configured v4 profiles can raise the delegate.
-            // ceiling=(target-Y)/8: blend becomes full within eight blocks of the top.
-            double layer=Math.max(0,Math.min(1,(16-ceiling*8)/8));
-            shaped+=(ceiling-shaped)*layer*bandWeight;
-        }
         return shaped;
     }
     public void fillArray(double[] data,ContextProvider provider){provider.fillAllDirectly(data,this);}

@@ -10,6 +10,7 @@ public final class GenerationContextTest {
         var registries=PreviewWorld.bootstrap();var biomes=registries.registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
         OceanTemperatureTest.run(biomes);
         OutlineContextTest.run(biomes);
+        CoastTransitionTest.run(biomes);
         CoastContextTest.run(biomes);
         // Regression: an inherited cold delegate must not freeze an unconfigured coastline.
         for(int version:new int[]{1,2,3}) {

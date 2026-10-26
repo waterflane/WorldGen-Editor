@@ -7,23 +7,25 @@ import java.util.function.BiFunction;
 /** World-space contour distances. Geometry tiles are shared, bounded and built only on demand. */
 public final class CoastField {
     static final double WATERLINE=.54;
+    public static final int RECOVERY=256;
     static final int TILE=64, STEP=4, CACHE_TILES=512;
     record Bounds(double minX,double minZ,double maxX,double maxZ) {}
-    public record Sample(double distance,IslandMask.SourceInfo source) {
+    public record Sample(double distance,IslandMask.SourceInfo source,double variation) {
+        public Sample(double distance,IslandMask.SourceInfo source){this(distance,source,0);}
         public CoastProfile profile(){return source.coast();}
         double value(double raw) {
             double b=profile().beachWidthBlocks(),s=profile().shallowOceanWidthBlocks();
             if(distance>=0) {
-                if(b==0)return Math.max(.72,raw);
-                if(distance<=b)return WATERLINE+.04*distance/b;
-                double t=Math.min(1,(distance-b)/64);t=t*t*(3-2*t);
-                return .58+(Math.max(.58,raw)-.58)*t;
+                double edge=b>0?.58:WATERLINE;
+                if(b>0&&distance<=b)return WATERLINE+.04*smooth(distance/b);
+                return edge+(Math.max(edge,raw)-edge)*smooth((distance-b)/RECOVERY);
             }
             double d=-distance;
-            if(s>0&&d<=s)return WATERLINE-.46*d/s;
-            return Math.min(raw,.079*Math.max(0,1-(d-s)/64));
+            if(s>0&&d<=s)return WATERLINE-.46*smooth(d/s);
+            return (s>0?.08:WATERLINE)*(1-smooth((d-s)/RECOVERY));
         }
     }
+    private static double smooth(double t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);}
     private record Segment(double ax,double az,double bx,double bz,IslandMask.SourceInfo source) {
         double distance(double x,double z){double dx=bx-ax,dz=bz-az,t=Math.max(0,Math.min(1,((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz)));return Math.hypot(x-ax-t*dx,z-az-t*dz);}
     }
@@ -40,8 +42,8 @@ public final class CoastField {
     private final Map<Long,Segment> hints=new LinkedHashMap<>(128,.75f,true){protected boolean removeEldestEntry(Map.Entry<Long,Segment> e){return size()>1024;}};
     CoastField(BiFunction<Double,Double,IslandMask.SampleInfo> raw,List<Bounds> bounds,List<CoastProfile> profiles) {
         this.raw=raw;this.bounds=List.copyOf(bounds);
-        landReach=profiles.stream().mapToInt(CoastProfile::beachWidthBlocks).max().orElse(0)+64;
-        waterReach=profiles.stream().mapToInt(CoastProfile::shallowOceanWidthBlocks).max().orElse(0)+64;
+        landReach=profiles.stream().mapToInt(CoastProfile::beachWidthBlocks).max().orElse(0)+RECOVERY;
+        waterReach=profiles.stream().mapToInt(CoastProfile::shallowOceanWidthBlocks).max().orElse(0)+RECOVERY;
     }
     private static long key(int x,int z){return ((long)x<<32)^(z&0xffffffffL);}
     private static IslandMask.SourceInfo owner(IslandMask.SampleInfo sample){return sample.coastOwner()!=null?sample.coastOwner():sample.landSource()!=null?sample.landSource():sample.archipelagoSource();}
@@ -49,11 +51,11 @@ public final class CoastField {
         boolean land=original.value()>=WATERLINE;
         var own=owner(original);
         if(land&&(own==null||own.coast()==null))return null;
-        double reach=land?landReach:waterReach,best=reach;
+        double reach=land?landReach:waterReach,best=reach,maxBand=reach-RECOVERY,bestScore=Double.POSITIVE_INFINITY,bestDistance=reach;
         long hintKey=key((int)Math.floor(x/TILE),(int)Math.floor(z/TILE));Segment nearest;
         synchronized(hints){nearest=hints.get(hintKey);}
-        if(nearest!=null){double d=nearest.distance(x,z);if(d<=best&&d<=band(nearest,land)&&band(nearest,land)>0)best=Math.min(reach,d+1e-9);nearest=null;}
-        Segment recovery=null;double recoveryDistance=reach;
+        if(nearest!=null){double d=nearest.distance(x,z);double width=band(nearest,land);if(width>0&&d<=width){bestScore=d/width+1e-12;best=Math.min(reach,bestScore*maxBand+1e-8);}nearest=null;}
+        Segment recovery=null;double recoveryDistance=reach,recoveryProgress=Double.POSITIVE_INFINITY;
         Set<Long> seen=new HashSet<>();List<Candidate> candidates=new ArrayList<>();
         for(var b:bounds) {
             int minX=(int)Math.floor(Math.max(b.minX,x-best)/TILE),maxX=(int)Math.floor(Math.min(b.maxX,x+best)/TILE);
@@ -69,15 +71,15 @@ public final class CoastField {
             if(candidate.distance>best)break;
             for(var segment:tile(candidate.x,candidate.z)) {
                 double d=segment.distance(x,z),width=band(segment,land);
-                if(width>0&&d<=width&&d<best){best=d;nearest=segment;}
-                else if(d<=width+64&&d<recoveryDistance){recoveryDistance=d;recovery=segment;}
+                if(width>0&&d<=width){double score=d/width;if(score<bestScore){bestScore=score;best=Math.min(reach,score*maxBand+1e-8);bestDistance=d;nearest=segment;}}
+                else if(d<=width+RECOVERY&&(d-width)<recoveryProgress){recoveryProgress=d-width;recoveryDistance=d;recovery=segment;}
             }
         }
-        if(nearest==null){nearest=recovery;best=recoveryDistance;}
+        if(nearest==null){nearest=recovery;bestDistance=recoveryDistance;}
         if(nearest!=null) {
             synchronized(hints){hints.put(hintKey,nearest);}
-            var profile=nearest.source.coast();double limit=(land?profile.beachWidthBlocks():profile.shallowOceanWidthBlocks())+64;
-            if(best<=limit)return new Sample(land?best:-Math.max(1e-9,best),nearest.source);
+            var profile=nearest.source.coast();double limit=(land?profile.beachWidthBlocks():profile.shallowOceanWidthBlocks())+RECOVERY;
+            if(bestDistance<=limit)return new Sample(land?bestDistance:-Math.max(1e-9,bestDistance),nearest.source);
         }
         return own!=null&&own.coast()!=null?new Sample(land?Double.POSITIVE_INFINITY:Double.NEGATIVE_INFINITY,own):null;
     }

@@ -45,8 +45,8 @@ final class CoastContextTest {
         for(int x:new int[]{144,152,200,240,280}){
             var column=world.generator().getBaseColumn(x,0,accessor,world.random());int floor=-64;
             for(int y=319;y>=-64;y--){var block=column.getBlock(y);if(!block.isAir()&&block.getFluidState().isEmpty()){floor=y;break;}}
-            var sample=world.context().mask().sampleInfo(x,0);double target=world.generator().getSeaLevel()+(sample.value()-.54)*80;
-            GenerationContextTest.check(floor>=Math.floor(target)-5&&floor<=Math.ceil(target)+3,"Coastal seabed/land did not follow the metric envelope at "+x+": "+floor+" target="+target);
+            var sample=world.context().mask().sampleInfo(x,0);var envelope=CoastTerrain.envelope(sample.coast(),world.generator().getSeaLevel());
+            GenerationContextTest.check(floor>=Math.floor(envelope.floor())-5&&floor<=Math.ceil(envelope.ceiling())+3,"Coastal seabed/land did not follow the metric envelope at "+x+": "+floor+" bounds="+envelope);
         }
         var inherited=JsonParser.parseString(Files.readString(Path.of("../../common/src/test/resources/island-outlines.json"))).getAsJsonArray().get(1).getAsJsonObject().getAsJsonObject("config").deepCopy();
         inherited.getAsJsonArray("entries").get(0).getAsJsonObject().addProperty("temperature","warm");

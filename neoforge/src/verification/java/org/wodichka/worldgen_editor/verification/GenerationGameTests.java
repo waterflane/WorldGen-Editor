@@ -19,6 +19,7 @@ import java.util.*;
 public final class GenerationGameTests {
     private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(3)).build();
     static JsonObject post(String path,JsonObject value) throws Exception {
+        if(path.equals("session"))value.addProperty("coast_revision",2);
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:8765/api/"+path))
                 .timeout(java.time.Duration.ofSeconds(15))
                 .header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(value.toString())).build();
