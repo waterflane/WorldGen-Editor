@@ -30,6 +30,7 @@ final class OceanVerification {
         }
         helper.assertTrue(points.size()>=10,"Painted fixture has no coastal control points");
         var noTemperature=IslandConfigLoader.toJson(context.config());noTemperature.remove("ocean_temperature");
+        if("1".equals(System.getProperty("wge.outlineCase")))noTemperature=JsonParser.parseString(Files.readString(Path.of(System.getProperty("wge.outlineFixtures")))).getAsJsonArray().get(0).getAsJsonObject().getAsJsonObject("config");
         var baseline=new GenerationContext(2,IslandConfigLoader.parse(noTemperature),3,context.biomes());
         var baselineBinding=new GenerationBinding();baselineBinding.set(baseline);
         var originalBinding=((IslandBiomeSource)generator.getBiomeSource()).binding();
@@ -53,7 +54,8 @@ final class OceanVerification {
             heights.add(y);
             if(climate.equals("default")||climate.equals("temperate")) {
                 int qx=Math.floorDiv(x,4),qz=Math.floorDiv(z,4);var info=context.mask().sampleInfo(qx*4,qz*4);
-                if(info.value()<IslandTerrainHooks.FULL_OCEAN_MASK) {
+                var climateSource=info.oceanSource()!=null?info.oceanSource():info.archipelagoSource()!=null?info.archipelagoSource():info.landSource();
+                if(info.value()<IslandTerrainHooks.FULL_OCEAN_MASK && (!climate.equals("default")||climateSource==null||climateSource.temperature()==IslandTemperature.STANDARD||climateSource.temperature()==IslandTemperature.TEMPERATE)) {
                     var biome=generator.getBiomeSource().getNoiseBiome(qx,75,qz,random.sampler());
                     helper.assertTrue(biome.is(Biomes.OCEAN)||biome.is(Biomes.DEEP_OCEAN),"Unconfigured coast selected a temperature variant");normalOceanChecks++;
                 }
@@ -80,6 +82,7 @@ final class OceanVerification {
             for(int sampleY:new int[]{y,300,0,-32})helper.assertTrue(biomeManager.getBiome(new BlockPos(p.getX(),sampleY,p.getZ())).unwrapKey().orElseThrow().location().toString().equals(biomeIds.get(index++)),"Saved biomes changed after reload");
         }
         var result=new JsonObject();result.addProperty("seed",2);result.addProperty("ocean_temperature",climate);result.addProperty("biome_samples",biomeChecks);result.addProperty("base_height_samples",heightChecks);
+        if(System.getProperty("wge.outlineCase")!=null){result.addProperty("outline_case",System.getProperty("wge.outlineCase"));result.addProperty("outline_objects",context.config().entries().stream().filter(entry->entry.outline()!=null).count());}
         result.addProperty("normal_ocean_samples",normalOceanChecks);result.addProperty("mismatches",0);result.addProperty("pinned_snapshot_reload",true);result.addProperty("base_heights_unchanged",true);
         result.add("points",new Gson().toJsonTree(points.stream().map(p->List.of(p.getX(),p.getZ())).toList()));result.add("biomes",new Gson().toJsonTree(biomeIds));result.add("heights",new Gson().toJsonTree(heights));
         Files.writeString(Path.of("ocean-result.json"),new GsonBuilder().setPrettyPrinting().create().toJson(result));helper.succeed();

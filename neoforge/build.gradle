@@ -89,6 +89,12 @@ if (project.hasProperty('oceanVerification')) {
     loom.runs.verification.runDir testDir
     loom.runs.verification.property 'wge.oceanVerification','true'
     loom.runs.verification.property 'wge.oceanClimate',climate
+    if(project.hasProperty('outlineCase')) {
+        def outlineCase=project.property('outlineCase').toString()
+        if(!(outlineCase in ['1','2','3']))throw new GradleException('outlineCase must be 1, 2 or 3')
+        loom.runs.verification.property 'wge.outlineCase',outlineCase
+        loom.runs.verification.property 'wge.outlineFixtures',rootProject.file('common/src/test/resources/island-outlines.json').absolutePath
+    }
     loom.runs.verification.programArg '--mixin.config'
     loom.runs.verification.programArg 'wge-verification.mixins.json'
     tasks.named('processVerificationResources').configure {
@@ -105,6 +111,7 @@ if (project.hasProperty('oceanVerification')) {
             }
             def presetDir=file("$testDir/config/worldgen_editor/presets");presetDir.mkdirs()
             def config=new groovy.json.JsonSlurper().parse(rootProject.file(project.findProperty('oceanPreset') ?: 'common/src/test/resources/painted-islands.json'))
+            if(project.hasProperty('outlineCase'))config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/island-outlines.json'))[project.property('outlineCase').toString().toInteger()].config
             if(climate=='default')config.remove('ocean_temperature');else config.ocean_temperature=climate
             new File(presetDir,'default.json').text=groovy.json.JsonOutput.toJson(config)
         }

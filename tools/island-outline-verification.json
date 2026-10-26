@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-26",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mod_version": "0.4.0",
+  "entry_type": "outlined_island",
+  "java_capability": "island_outline_v1",
+  "preview_tests_passed": 54,
+  "java_javascript_mask_samples": 1324,
+  "mask_tolerance": 1e-12,
+  "legacy_biome_cases": 576,
+  "multi_preset_height_columns": 576,
+  "before_after_conversion": {
+    "base_heights": 25,
+    "block_biomes": 100,
+    "mismatches": 0
+  },
+  "real_world_cases": [
+    {
+      "seed": 2,
+      "ocean_temperature": "default",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "outline_case": "1",
+      "outline_objects": 1,
+      "normal_ocean_samples": 19,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true
+    },
+    {
+      "seed": 2,
+      "ocean_temperature": "default",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "outline_case": "2",
+      "outline_objects": 1,
+      "normal_ocean_samples": 16,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true
+    },
+    {
+      "seed": 2,
+      "ocean_temperature": "default",
+      "biome_samples": 76,
+      "base_height_samples": 19,
+      "outline_case": "3",
+      "outline_objects": 2,
+      "normal_ocean_samples": 16,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "base_heights_unchanged": true
+    }
+  ],
+  "separate_process_reopen_with_invalid_source_preset": "passed",
+  "browser_checks": {
+    "isolated_draft": "outline-qa",
+    "irregular_coast_converted": true,
+    "radius_edited": true,
+    "rotation_edited": true,
+    "temperature_edited": true,
+    "exact_java_preview_applied": true
+  },
+  "shared_tile_limit": 4096,
+  "file_limit_mib": 32,
+  "release_build": "passed",
+  "test_only_entries_in_release": [],
+  "release_sha256": "a15550205f9c51a844390ba977afbe1e4356a65251e85af6b413936f4821462d",
+  "deployed_to_test_profile": true
+}
