@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-26",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mod_version": "0.4.0",
+  "generation_version": 4,
+  "preview_tests_passed": 64,
+  "java_javascript_mask_samples": 3237,
+  "mask_tolerance": 1e-12,
+  "legacy_mask_and_biome_regressions_passed": true,
+  "legacy_biome_cases": 576,
+  "legacy_multi_preset_height_columns": 576,
+  "coast_base_columns": 24,
+  "physical_beach_and_seabed_checked": true,
+  "inherited_outline_climate_preserved": true,
+  "real_world_cases": [
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "6",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true
+    },
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "7",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true
+    },
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "8",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true
+    },
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "9",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true
+    }
+  ],
+  "second_server_pinned_reopen_with_invalid_source": true,
+  "performance": {
+    "date": "2026-10-26",
+    "profile": "Minecraft + WGE",
+    "session_ms": 16.654799999999994,
+    "first_coarse_tile_ms": 124.31299999999999,
+    "repeat_tile_ms": 3.7992000000000132,
+    "java_cancel_ms": 17.448399999999992,
+    "java_cancelled": true,
+    "worker_cancel_ms": 8.445299999999975,
+    "changed_width_new_session": true,
+    "followup_after_cancel": true,
+    "heap_limit_mib": 512,
+    "heap_used_mib": 134,
+    "cold_startup_seconds": 4.43
+  },
+  "process_working_set_bytes": 435150848,
+  "process_peak_working_set_bytes": 487563264,
+  "runtime_files_bytes_excluding_jre": 60232240,
+  "test_classes_excluded_from_release": true,
+  "release_sha256": "fbe809826b8e689ccc25d4d0fa0791bc3fce318fc827742a8c5c269e8954bb95",
+  "installed_profile": "NeoForge 1.21.1",
+  "previous_jar_backup": "build/test-profile-backups/20261026-150334-207/worldgen-editor-neoforge-0.4.0.jar"
+}

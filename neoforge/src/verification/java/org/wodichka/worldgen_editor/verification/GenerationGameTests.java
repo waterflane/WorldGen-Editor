@@ -49,6 +49,7 @@ public final class GenerationGameTests {
     }
     @GameTest(template="empty",timeoutTicks=1200)
     public static void previewMatchesWorld(GameTestHelper helper) throws Exception {
+        if(Boolean.getBoolean("wge.coastVerification")){CoastVerification.verify(helper);return;}
         if(Boolean.getBoolean("wge.oceanVerification")) { OceanVerification.verify(helper);return; }
         if(Boolean.getBoolean("wge.compatibilityVerification")){
             Class.forName("org.wodichka.worldgen_editor.verification.CompatibilityVerification")

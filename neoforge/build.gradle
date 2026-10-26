@@ -89,6 +89,12 @@ if (project.hasProperty('oceanVerification')) {
     loom.runs.verification.runDir testDir
     loom.runs.verification.property 'wge.oceanVerification','true'
     loom.runs.verification.property 'wge.oceanClimate',climate
+    if(project.hasProperty('coastCase')) {
+        def coastCase=project.property('coastCase').toString()
+        if(!(coastCase ==~ /[0-9]/))throw new GradleException('coastCase must be 0 through 9')
+        loom.runs.verification.property 'wge.coastVerification','true'
+        loom.runs.verification.property 'wge.coastCase',coastCase
+    }
     if(project.hasProperty('outlineCase')) {
         def outlineCase=project.property('outlineCase').toString()
         if(!(outlineCase in ['1','2','3']))throw new GradleException('outlineCase must be 1, 2 or 3')
@@ -99,8 +105,9 @@ if (project.hasProperty('oceanVerification')) {
     loom.runs.verification.programArg 'wge-verification.mixins.json'
     tasks.named('processVerificationResources').configure {
         inputs.property 'oceanVerification',climate
+        inputs.property 'coastCase',project.findProperty('coastCase') ?: 'none'
         filesMatching('data/minecraft/worldgen/world_preset/flat.json') {
-            filter { line -> line.replace('"generation_version": 2','"generation_version": 3').replace('"worldgen_editor:island_overworld"','"minecraft:overworld"') }
+            filter { line -> line.replace('"generation_version": 2',project.hasProperty('coastCase')?'"generation_version": 4':'"generation_version": 3').replace('"worldgen_editor:island_overworld"','"minecraft:overworld"') }
         }
     }
     tasks.named('runVerification').configure {
@@ -112,6 +119,7 @@ if (project.hasProperty('oceanVerification')) {
             def presetDir=file("$testDir/config/worldgen_editor/presets");presetDir.mkdirs()
             def config=new groovy.json.JsonSlurper().parse(rootProject.file(project.findProperty('oceanPreset') ?: 'common/src/test/resources/painted-islands.json'))
             if(project.hasProperty('outlineCase'))config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/island-outlines.json'))[project.property('outlineCase').toString().toInteger()].config
+            if(project.hasProperty('coastCase'))config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/coast-profiles.json'))[project.property('coastCase').toString().toInteger()].config
             if(climate=='default')config.remove('ocean_temperature');else config.ocean_temperature=climate
             new File(presetDir,'default.json').text=groovy.json.JsonOutput.toJson(config)
         }
