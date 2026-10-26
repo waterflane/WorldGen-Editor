@@ -31,7 +31,7 @@ public final class PreviewServer {
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.createContext("/api/info", exchange -> handle(exchange, () -> {
             JsonObject value = new JsonObject(); value.addProperty("protocol",2);value.addProperty("minecraft","1.21.1");
-            value.addProperty("generation_version",3);value.add("supported_generation_versions",JsonParser.parseString("[1,2,3]"));value.add("capabilities",JsonParser.parseString("[\"painted_map_v1\",\"vanilla_wge_only\",\"ocean_temperature_v1\"]"));value.addProperty("resources",RESOURCES);
+            value.addProperty("generation_version",3);value.add("supported_generation_versions",JsonParser.parseString("[1,2,3]"));value.add("capabilities",JsonParser.parseString("[\"painted_map_v1\",\"vanilla_wge_only\",\"ocean_temperature_v1\",\"island_outline_v1\"]"));value.addProperty("resources",RESOURCES);
             value.addProperty("workers",WORKERS);
             value.addProperty("sampling_engine",Boolean.getBoolean("wge.preview.referenceSampler")?"reference":"column");
             value.addProperty("heap_used_mib",(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1048576);return value;

@@ -12,6 +12,7 @@ public record GenerationContext(long seed, IslandConfig config, int generationVe
 
     public GenerationContext {
         if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3; create a new custom-map world");
+        if(generationVersion<3&&config.entries().stream().anyMatch(entry->entry.outline()!=null))throw new IllegalArgumentException("Island outlines require generation_version 3");
     }
 
     public GenerationContext(long seed, IslandConfig config, int version, Registry<Biome> biomes) {

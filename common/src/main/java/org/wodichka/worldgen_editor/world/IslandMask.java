@@ -19,6 +19,7 @@ public final class IslandMask {
     private final List<CompiledIsland> landShapes;
     private final List<CompiledIsland> oceanShapes;
     private final List<CompiledParent> archipelagoParents;
+    private final List<CompiledOutline> outlines;
     private final org.wodichka.worldgen_editor.config.PaintedMap paintedMap;
     // A context owns an immutable mask; cache columns separately for each generation thread.
     private final ThreadLocal<java.util.Map<Long,SampleInfo>> columnSamples=ThreadLocal.withInitial(()->new java.util.LinkedHashMap<>(128,.75f,true){
@@ -30,8 +31,11 @@ public final class IslandMask {
         List<CompiledIsland> land = new ArrayList<>();
         List<CompiledIsland> ocean = new ArrayList<>();
         List<CompiledParent> parents = new ArrayList<>();
+        List<CompiledOutline> drawn = new ArrayList<>();
         for (IslandEntry entry : config.entries()) {
-            if (entry.type() == IslandEntryType.OCEAN) {
+            if(entry.outline()!=null) {
+                drawn.add(new CompiledOutline(entry,sourceInfo(entry,worldSeed,null)));
+            } else if (entry.type() == IslandEntryType.OCEAN) {
                 ocean.add(new CompiledIsland(entry, sourceInfo(entry, worldSeed, null), worldSeed));
             } else if (entry.type() == IslandEntryType.ARCHIPELAGO) {
                 parents.add(new CompiledParent(entry, sourceInfo(entry, 0L, entry.name())));
@@ -43,10 +47,11 @@ public final class IslandMask {
         this.landShapes = List.copyOf(land);
         this.oceanShapes = List.copyOf(ocean);
         this.archipelagoParents = List.copyOf(parents);
+        this.outlines=List.copyOf(drawn);
     }
 
     public boolean isEmpty() {
-        return paintedMap==null && landShapes.isEmpty() && oceanShapes.isEmpty() && archipelagoParents.isEmpty();
+        return paintedMap==null && landShapes.isEmpty() && oceanShapes.isEmpty() && archipelagoParents.isEmpty() && outlines.isEmpty();
     }
 
     public double sample(double blockX, double blockZ) {
@@ -103,10 +108,63 @@ public final class IslandMask {
         }
 
         double base=clamp01(Math.min(land,1.0D-ocean));
-        double value=paintedMap==null?base:paintedMap.apply(base,blockX,blockZ);
+        double value;
+        if(outlines.isEmpty())value=paintedMap==null?base:paintedMap.apply(base,blockX,blockZ);
+        else {
+            var overlay=sampleOutlines(base,blockX,blockZ);value=overlay.value;
+            if(overlay.source!=null) {
+                if(overlay.source.temperature()!=IslandTemperature.STANDARD || !overlay.source.excludedBiomes().isEmpty()) {
+                    landSource=overlay.source;parentSource=null;oceanSource=null;
+                }else if(landSource==null&&parentSource==null)landSource=overlay.source;
+            }
+        }
         if(value>base && landSource==null && parentSource==null)
             landSource=new SourceInfo("Painted land",IslandEntryType.ISLAND,null,0L,List.of(),IslandTemperature.STANDARD,512);
         return new SampleInfo(value,landSource,oceanSource,parentSource);
+    }
+
+    private record OutlineSample(double value,SourceInfo source) { }
+    private OutlineSample sampleOutlines(double base,double x,double z) {
+        int ix=(int)Math.floor(x/4),iz=(int)Math.floor(z/4);double fx=x/4-ix,fz=z/4-iz,result=0,strongest=0;
+        SourceInfo source=null;
+        // Compose coverage/value at world-grid nodes, then interpolate once. This preserves
+        // the original mask exactly when its nodes move from the root grid into an object.
+        for(int dz=0;dz<2;dz++)for(int dx=0;dx<2;dx++) {
+            double alpha=0,weighted=0,influence=0;SourceInfo owner=null;
+            double bx=(ix+dx)*4.0,bz=(iz+dz)*4.0;
+            for(var outline:outlines) {
+                if(!outline.contains(bx,bz))continue;
+                var field=outline.field(bx,bz);
+                influence*=1-field.alpha();
+                if(field.alpha()>=influence&&field.alpha()>0){owner=outline.source;influence=field.alpha();}
+                weighted=field.weightedValue()+weighted*(1-field.alpha());alpha=field.alpha()+alpha*(1-field.alpha());
+            }
+            if(paintedMap!=null) {
+                int p=paintedMap.packedNode(ix+dx,iz+dz);double a=(p>>>16)/65535.0,v=(p&65535)/65535.0;
+                weighted=a*v+weighted*(1-a);alpha=a+alpha*(1-a);influence*=1-a;
+            }
+            double weight=(dx==0?1-fx:fx)*(dz==0?1-fz:fz);
+            result+=weight*(base*(1-alpha)+weighted);
+            if(owner!=null&&weight*influence>strongest){strongest=weight*influence;source=owner;}
+        }
+        return new OutlineSample(clamp01(result),source);
+    }
+
+    private static final class CompiledOutline {
+        final IslandEntry entry;final SourceInfo source;final double cos,sin,scaleX,scaleZ,extentX,extentZ;
+        CompiledOutline(IslandEntry entry,SourceInfo source) {
+            this.entry=entry;this.source=source;double angle=Math.toRadians(entry.rotationDegrees());cos=Math.cos(angle);sin=Math.sin(angle);
+            scaleX=entry.outline().radiusX()/(entry.xDivisor()*entry.multiplier());scaleZ=entry.outline().radiusZ()/(entry.zDivisor()*entry.multiplier());
+            var bounds=entry.outline().mask().bounds();
+            double rx=(Math.max(Math.abs(bounds.minX()),Math.abs(bounds.maxX()))+4)/scaleX;
+            double rz=(Math.max(Math.abs(bounds.minZ()),Math.abs(bounds.maxZ()))+4)/scaleZ;
+            extentX=Math.abs(cos)*rx+Math.abs(sin)*rz+8;extentZ=Math.abs(sin)*rx+Math.abs(cos)*rz+8;
+        }
+        boolean contains(double x,double z){return Math.abs(x-entry.centerX())<=extentX&&Math.abs(z-entry.centerZ())<=extentZ;}
+        org.wodichka.worldgen_editor.config.PaintedMap.Field field(double x,double z) {
+            double dx=x-entry.centerX(),dz=z-entry.centerZ();
+            return entry.outline().mask().field((dx*cos-dz*sin)*scaleX,(dx*sin+dz*cos)*scaleZ);
+        }
     }
 
     public record SourceInfo(String name, IslandEntryType type, String parentName, long climateSeed, List<String> excludedBiomes,

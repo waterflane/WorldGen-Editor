@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 public final class IslandConfigLoaderTest {
     public static void main(String[] args) throws Exception {
         goldenMasks();
+        IslandOutlineTest.run();
         rejectsUnsafeNumbers();
         roundTripsSnapshot();
         parsesMainPresetConfig();

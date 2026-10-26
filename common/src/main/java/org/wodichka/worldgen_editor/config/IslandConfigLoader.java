@@ -233,6 +233,8 @@ public final class IslandConfigLoader {
             throw new IslandConfigException("root.outer_ocean must be a biome id like minecraft:deep_ocean");
         }
         JsonArray entries = requireArray(object, "entries", "root");
+        PaintedMap paintedMap=object.has("painted_map")?PaintedMap.parse(object.get("painted_map")):null;
+        int paintedTiles=paintedMap==null?0:paintedMap.tileCount();
         List<IslandEntry> parsedEntries = new ArrayList<>();
 
         for (int index = 0; index < entries.size(); index++) {
@@ -240,6 +242,8 @@ public final class IslandConfigLoader {
             String path = "entries[" + index + "]";
             String name = optionalString(entry, "name", "island_" + (index + 1), path);
             IslandEntryType type = parseEntryType(optionalString(entry, "type", "island", path), path);
+            boolean outlinedType=optionalString(entry,"type","island",path).equalsIgnoreCase("outlined_island");
+            if(outlinedType!=entry.has("outline"))throw new IslandConfigException(path+": outline data requires type outlined_island, which requires outline data");
             JsonObject noise = optionalObject(entry, "noise", path);
             List<Double> amplitudes = noise == null || !has(noise, "amplitudes")
                     ? DEFAULT_AMPLITUDES
@@ -296,6 +300,8 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException(path + ".min_shape_power must be <= max_shape_power");
             }
 
+            IslandOutline outline=entry.has("outline")?IslandOutline.parse(entry.get("outline")):null;
+            if(outline!=null){paintedTiles+=outline.mask().tileCount();if(paintedTiles>PaintedMap.MAX_TILES)throw new IslandConfigException("Combined painted map and island outlines exceed 4096 tiles");}
             parsedEntries.add(new IslandEntry(
                     type,
                     name,
@@ -326,11 +332,14 @@ public final class IslandConfigLoader {
                     minStretch,
                     maxStretch,
                     minShapePower,
-                    maxShapePower
+                    maxShapePower,
+                    outline
             ));
         }
 
         for (IslandEntry entry : parsedEntries) {
+            if(entry.outline()!=null && (entry.type()!=IslandEntryType.ISLAND || entry.overlap()))
+                throw new IslandConfigException("Outlines require type island and overlap false");
             double amplitudeSum = entry.noise().amplitudes().stream().mapToDouble(Double::doubleValue).sum();
             if (!Double.isFinite(amplitudeSum) || entry.noise().amplitudes().size() > 16
                     || entry.noise().scale() > 1024 || entry.multiplier() > 100 || entry.edgeWidth() > 10
@@ -343,7 +352,7 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
-        return new IslandConfig(enabled, outerOcean, parsedEntries, object.has("painted_map") ? PaintedMap.parse(object.get("painted_map")) : null,displayName,oceanTemperature);
+        return new IslandConfig(enabled, outerOcean, parsedEntries, paintedMap,displayName,oceanTemperature);
     }
 
     public static JsonObject toJson(IslandConfig config) {
@@ -355,7 +364,7 @@ public final class IslandConfigLoader {
         JsonArray entries = new JsonArray();
         for (IslandEntry entry : config.entries()) {
             JsonObject value = new JsonObject();
-            value.addProperty("type", entry.type().name().toLowerCase(java.util.Locale.ROOT));
+            value.addProperty("type", entry.outline()!=null?"outlined_island":entry.type().name().toLowerCase(java.util.Locale.ROOT));
             value.addProperty("name", entry.name());
             value.addProperty("overlap", entry.overlap());
             value.addProperty("x", entry.centerX()); value.addProperty("z", entry.centerZ());
@@ -365,6 +374,7 @@ public final class IslandConfigLoader {
             value.addProperty("shore_width", entry.edgeWidth());
             value.addProperty("temperature", entry.temperature().name().toLowerCase(java.util.Locale.ROOT));
             value.addProperty("biome_patch_size", entry.biomePatchSize());
+            if(entry.outline()!=null)value.add("outline",entry.outline().toJson());
             value.add("exclude_biomes", GSON.toJsonTree(entry.excludedBiomes()));
             JsonObject noise = new JsonObject(); noise.addProperty("seed", entry.noise().seed());
             noise.addProperty("first_octave", entry.noise().firstOctave()); noise.addProperty("scale", entry.noise().scale());
@@ -442,10 +452,10 @@ public final class IslandConfigLoader {
 
     private static IslandEntryType parseEntryType(String value, String path) throws IslandConfigException {
         return switch (value.toLowerCase(java.util.Locale.ROOT)) {
-            case "island" -> IslandEntryType.ISLAND;
+            case "island", "outlined_island" -> IslandEntryType.ISLAND;
             case "ocean" -> IslandEntryType.OCEAN;
             case "archipelago" -> IslandEntryType.ARCHIPELAGO;
-            default -> throw new IslandConfigException(path + ".type must be one of island, ocean, archipelago");
+            default -> throw new IslandConfigException(path + ".type must be one of island, outlined_island, ocean, archipelago");
         };
     }
 

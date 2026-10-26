@@ -27,7 +27,8 @@ public record IslandEntry(
         double minStretch,
         double maxStretch,
         double minShapePower,
-        double maxShapePower
+        double maxShapePower,
+        IslandOutline outline
 ) {
     public IslandEntry {
         excludedBiomes = List.copyOf(excludedBiomes);

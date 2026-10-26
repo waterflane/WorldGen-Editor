@@ -42,6 +42,30 @@ public final class PaintedMap {
         int[] data=tiles.get(key(Math.floorDiv(x,SIZE),Math.floorDiv(z,SIZE)));
         return data==null?0:data[Math.floorMod(z,SIZE)*SIZE+Math.floorMod(x,SIZE)];
     }
+    public int packedNode(int x,int z) { return node(x,z); }
+    public int tileCount() { return tiles.size(); }
+    public record Field(double alpha,double weightedValue) { }
+    public Field field(double x,double z) {
+        double gx=x/STEP,gz=z/STEP;int ix=(int)Math.floor(gx),iz=(int)Math.floor(gz);
+        double fx=gx-ix,fz=gz-iz,alpha=0,weighted=0;
+        for(int dz=0;dz<2;dz++)for(int dx=0;dx<2;dx++) {
+            int packed=node(ix+dx,iz+dz);double weight=(dx==0?1-fx:fx)*(dz==0?1-fz:fz),a=(packed>>>16)/65535.0;
+            alpha+=weight*a;weighted+=weight*a*(packed&65535)/65535.0;
+        }
+        return new Field(alpha,weighted);
+    }
+    public record Bounds(double minX,double minZ,double maxX,double maxZ) { }
+    public Bounds bounds() {
+        double minX=Double.POSITIVE_INFINITY,minZ=minX,maxX=Double.NEGATIVE_INFINITY,maxZ=maxX;
+        for(var tile:tiles.entrySet()) {
+            int tx=(int)(tile.getKey()>>32),tz=(int)(long)tile.getKey();int[] data=tile.getValue();
+            for(int i=0;i<data.length;i++)if((data[i]>>>16)!=0) {
+                double x=((long)tx*SIZE+i%SIZE)*STEP,z=((long)tz*SIZE+i/SIZE)*STEP;
+                minX=Math.min(minX,x);maxX=Math.max(maxX,x);minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+            }
+        }
+        return minX==Double.POSITIVE_INFINITY?null:new Bounds(minX,minZ,maxX,maxZ);
+    }
     public double apply(double base,double x,double z) {
         double gx=x/STEP,gz=z/STEP;int ix=(int)Math.floor(gx),iz=(int)Math.floor(gz);
         double fx=gx-ix,fz=gz-iz,result=0;

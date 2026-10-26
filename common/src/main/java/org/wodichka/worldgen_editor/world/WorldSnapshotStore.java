@@ -14,6 +14,7 @@ public final class WorldSnapshotStore {
             if(!IslandConfigLoader.isSafePresetName(preset))throw new IllegalArgumentException("Invalid world preset filename");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
             if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3");
+            if(config.hasOutlines()&&generationVersion<3)throw new IllegalArgumentException("Island outlines require generation_version 3");
         }
     }
     public interface ConfigSupplier { IslandConfig get(String preset)throws IslandConfigException; }

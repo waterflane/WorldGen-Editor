@@ -74,7 +74,7 @@ public final class PreviewWorld {
                     digest.update(entry.getKey().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     try(var input=entry.getValue().open()){digest.update(input.readAllBytes());}
                 }
-                resourceFingerprint="minecraft-1.21.1-wge-3-ocean-temperature-1-"+HexFormat.of().formatHex(digest.digest());
+                resourceFingerprint="minecraft-1.21.1-wge-3-ocean-temperature-1-outline-1-"+HexFormat.of().formatHex(digest.digest());
             } catch(Exception error){throw new IllegalStateException("Could not fingerprint worldgen resources",error);}
         }
         return registries;
