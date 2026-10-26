@@ -1,10 +1,12 @@
 /* Local HTTP/worker checks; never reads or changes user saves. */
 const fs=require('node:fs'),path=require('node:path');
 const base='http://127.0.0.1:8765/api/',client='coast-performance-'+Date.now();
-async function post(route,body){const start=performance.now(),response=await fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,value:await response.json(),wall_ms:performance.now()-start};}
+async function post(route,body){if(route==='session')body={...body,coast_revision:2};const start=performance.now(),response=await fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,value:await response.json(),wall_ms:performance.now()-start};}
 (async()=>{
- const info=await (await fetch(base+'info')).json();if(!info.capabilities.includes('coast_profile_v1'))throw new Error('Prepare the updated Java preview first');
+ const info=await (await fetch(base+'info')).json();if(!info.capabilities.includes('coast_smoothing_v1'))throw new Error('Prepare the updated Java preview first');
  const config={name:'Coast benchmark '+client,enabled:true,entries:[{name:'Performance',x:0,z:0,radius:220,roughness:.12,coast:{beach_width_blocks:32,shallow_ocean_width_blocks:192}},{type:'ocean',x:0,z:0,radius:65,roughness:0}]};
+ const stale=await fetch(base+'session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed:'2',generation_version:4,config,client})});
+ if(stale.status!==400||!String((await stale.json()).error).includes('reload'))throw new Error('Old coast clients must be rejected explicitly');
  const session=await post('session',{seed:'2',generation_version:4,config,client});if(session.status!==200)throw new Error(JSON.stringify(session.value));
  const query={session:session.value.session,client,request:1,x:-256,z:-256,size:16,step:32,height_mode:'surface',include_heights:false};
  const first=await post('tile',query),repeat=await post('tile',{...query,request:2});
@@ -22,6 +24,6 @@ async function post(route,body){const start=performance.now(),response=await fet
  const core=require(path.resolve(__dirname,'../../WorldGen Editor Preview/mask-core.js')),compiled=core.parseConfig(large,2n);let active=true;
  const jsStart=performance.now();await core.sampleMaskAsync(large,compiled,8800,0,{},()=>active,async()=>{active=false;await new Promise(setImmediate);});const jsCancel=performance.now()-jsStart;
  if(jsCancel>100)throw new Error('Worker coast cancellation exceeded 100 ms');
- const result={date:'2026-10-26',profile:'Minecraft + WGE',session_ms:session.wall_ms,first_coarse_tile_ms:first.wall_ms,repeat_tile_ms:repeat.wall_ms,java_cancel_ms:cancel_ms,java_cancelled:!!cancelled.value.cancelled,worker_cancel_ms:jsCancel,changed_width_new_session:true,followup_after_cancel:true,heap_limit_mib:512,heap_used_mib:(await (await fetch(base+'info')).json()).heap_used_mib};
+ const result={date:'2026-10-26',profile:'Minecraft + WGE',session_ms:session.wall_ms,first_coarse_tile_ms:first.wall_ms,repeat_tile_ms:repeat.wall_ms,java_cancel_ms:cancel_ms,java_cancelled:!!cancelled.value.cancelled,worker_cancel_ms:jsCancel,changed_width_new_session:true,stale_client_rejected:true,followup_after_cancel:true,heap_limit_mib:512,heap_used_mib:(await (await fetch(base+'info')).json()).heap_used_mib};
  fs.writeFileSync(path.resolve(__dirname,'../build/coast-performance.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
 })().catch(error=>{console.error(error);process.exitCode=1});

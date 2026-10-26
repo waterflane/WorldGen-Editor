@@ -52,8 +52,17 @@ final class CoastVerification {
         var manager=new BiomeManager((qx,qy,qz)->restored.getBiomeSource().getNoiseBiome(qx,qy,qz,restoredNoise.sampler()),BiomeManager.obfuscateSeed(2));int index=0;
         for(int i=0;i<points.size();i++){var p=points.get(i);int y=heights.get(i);helper.assertTrue(restored.getBaseHeight(p.getX(),p.getZ(),Heightmap.Types.WORLD_SURFACE_WG,level,restoredNoise)-1==y,"Reopened coast terrain changed");
             for(int sampleY:new int[]{y,300,0,-32})helper.assertTrue(manager.getBiome(new BlockPos(p.getX(),sampleY,p.getZ())).unwrapKey().orElseThrow().location().toString().equals(biomeIds.get(index++)),"Reopened coast biome changed");}
+        var solidProfiles=new JsonArray();int maxSolidStep=0;
+        for(int z:new int[]{-256,128}){int previousFloor=0;boolean first=true;var profile=new JsonArray();
+            for(int x=-512;x<=768;x+=4){var column=generator.getBaseColumn(x,z,level,random);int floor=level.getMinBuildHeight();
+                for(int y=level.getMaxBuildHeight()-1;y>=level.getMinBuildHeight();y--){var state=column.getBlock(y);if(!state.isAir()&&state.getFluidState().isEmpty()){floor=y;break;}}
+                if(!first)maxSolidStep=Math.max(maxSolidStep,Math.abs(floor-previousFloor));first=false;previousFloor=floor;
+                var row=new JsonArray();row.add(x);row.add(z);row.add(floor);profile.add(row);
+            }solidProfiles.add(profile);
+        }
         var result=new JsonObject();result.addProperty("seed",2);result.addProperty("generation_version",4);result.addProperty("coast_case",System.getProperty("wge.coastCase"));
         result.addProperty("biome_samples",biomeChecks);result.addProperty("base_height_samples",points.size());result.addProperty("fast_surface_samples",points.size());result.addProperty("mismatches",0);result.addProperty("pinned_snapshot_reload",true);
+        result.add("solid_profiles",solidProfiles);result.addProperty("solid_profile_step_blocks",4);result.addProperty("solid_profile_max_height_step",maxSolidStep);
         result.add("points",new Gson().toJsonTree(points.stream().map(p->List.of(p.getX(),p.getZ())).toList()));result.add("heights",new Gson().toJsonTree(heights));
         Files.writeString(Path.of("coast-result.json"),new GsonBuilder().setPrettyPrinting().create().toJson(result));helper.succeed();
     }

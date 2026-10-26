@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-26",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.230",
+  "mod_version": "0.4.0",
+  "generation_version": 4,
+  "coast_revision": 2,
+  "preview_tests_passed": 67,
+  "java_javascript_mask_samples": 3237,
+  "mask_tolerance": 1e-12,
+  "legacy_biome_cases": 576,
+  "legacy_multi_preset_height_columns": 576,
+  "synthetic_hill": {
+    "old_max_step": 47,
+    "new_max_step": 2
+  },
+  "synthetic_profile_columns": 851,
+  "real_world_cases": [
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "7",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_step_blocks": 4,
+      "solid_profile_max_height_step": 24,
+      "solid_profile_samples": 642,
+      "solid_profiles_include_natural_cave_steps": true
+    },
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "8",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_step_blocks": 4,
+      "solid_profile_max_height_step": 24,
+      "solid_profile_samples": 642,
+      "solid_profiles_include_natural_cave_steps": true
+    },
+    {
+      "seed": 2,
+      "generation_version": 4,
+      "coast_case": "9",
+      "biome_samples": 92,
+      "base_height_samples": 23,
+      "fast_surface_samples": 23,
+      "mismatches": 0,
+      "pinned_snapshot_reload": true,
+      "solid_profile_step_blocks": 4,
+      "solid_profile_max_height_step": 18,
+      "solid_profile_samples": 642,
+      "solid_profiles_include_natural_cave_steps": true
+    }
+  ],
+  "performance": {
+    "date": "2026-10-26",
+    "profile": "Minecraft + WGE",
+    "session_ms": 23.616400000000006,
+    "first_coarse_tile_ms": 210.43259999999998,
+    "repeat_tile_ms": 9.222100000000012,
+    "java_cancel_ms": 18.108599999999967,
+    "java_cancelled": true,
+    "worker_cancel_ms": 8.679700000000025,
+    "changed_width_new_session": true,
+    "stale_client_rejected": true,
+    "followup_after_cancel": true,
+    "heap_limit_mib": 512,
+    "heap_used_mib": 176,
+    "cold_startup_seconds": 4.83
+  },
+  "process_working_set_bytes": 451960832,
+  "process_peak_working_set_bytes": 470732800,
+  "existing_user_saves_modified": false,
+  "release_sha256": "6df86af8a5a565d394cdb68ec2abb2eb8db4bb545ac86ef38dd62a4e619a2388"
+}
