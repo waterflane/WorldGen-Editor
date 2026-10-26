@@ -36,3 +36,9 @@ tasks.register('runPresetTests', JavaExec) {
     if(project.hasProperty('projectPreset'))args project.property('projectPreset')
 }
 check.dependsOn runPresetTests
+tasks.register('runCoastTests', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.wodichka.worldgen_editor.config.CoastProfileTest'
+}
+check.dependsOn runCoastTests

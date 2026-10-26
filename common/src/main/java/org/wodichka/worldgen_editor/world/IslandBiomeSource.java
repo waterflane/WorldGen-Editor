@@ -24,7 +24,7 @@ public final class IslandBiomeSource extends BiomeSource {
     public static final MapCodec<IslandBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("delegate").forGetter(source -> source.delegate),
             Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName),
-            Codec.intRange(1, 3).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
+            Codec.intRange(1, 4).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
             RegistryOps.retrieveGetter(Registries.BIOME)
     ).apply(instance, IslandBiomeSource::new));
 
@@ -71,6 +71,10 @@ public final class IslandBiomeSource extends BiomeSource {
         if(context==null || context.mask().isEmpty())return null;
         int x=QuartPos.toBlock(quartX),z=QuartPos.toBlock(quartZ);
         var sample=context.mask().sampleInfo(x,z);
+        if(sample.coast()!=null) {
+            if(sample.coast().distance()<0)return context.biomeRules().customCoastBiome(sample.coast(),null,x,z,coastClimateSource(sample));
+            return null;
+        }
         if(sample.value()>=IslandTerrainHooks.FULL_OCEAN_MASK)return null;
         if(sample.oceanSource()==null && sample.archipelagoSource()==null && sample.landSource()==null)
             return context.biomeRules().outerOceanBiome();
@@ -78,6 +82,12 @@ public final class IslandBiomeSource extends BiomeSource {
                 : sample.archipelagoSource()!=null ? sample.archipelagoSource() : sample.landSource();
         // All WGE ocean choices now depend on explicit config and mask, never the delegate or Y.
         return context.biomeRules().oceanBiome(sample.value(),source,null,x,z);
+    }
+
+    private static IslandMask.SourceInfo coastClimateSource(IslandMask.SampleInfo sample) {
+        if(sample.coast().distance()<0&&sample.oceanSource()!=null)return sample.oceanSource();
+        if(sample.coast().distance()<0&&sample.archipelagoSource()!=null)return sample.archipelagoSource();
+        return sample.landSource()!=null?sample.landSource():sample.archipelagoSource();
     }
 
     @Override
@@ -106,6 +116,10 @@ public final class IslandBiomeSource extends BiomeSource {
         int blockZ = QuartPos.toBlock(quartZ);
         IslandMask.SampleInfo sample = mask.sampleInfo(blockX, blockZ);
         Holder<Biome> delegateBiome = delegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+        if(sample.coast()!=null) {
+            var coast=context.biomeRules().customCoastBiome(sample.coast(),delegateBiome,blockX,blockZ,coastClimateSource(sample));
+            if(coast!=null)return coast;
+        }
         if (sample.value() < IslandTerrainHooks.FULL_OCEAN_MASK) {
             if (sample.oceanSource() == null && sample.archipelagoSource() == null && sample.landSource() == null) {
                 Holder<Biome> outerOcean = context.biomeRules().outerOceanBiome();

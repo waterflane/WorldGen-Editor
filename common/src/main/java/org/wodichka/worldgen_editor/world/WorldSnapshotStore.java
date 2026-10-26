@@ -13,6 +13,7 @@ public final class WorldSnapshotStore {
             GenerationContext.validateVersion(generationVersion);
             if(!IslandConfigLoader.isSafePresetName(preset))throw new IllegalArgumentException("Invalid world preset filename");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
+            if(config.hasCoasts()&&generationVersion<4)throw new IllegalArgumentException("Custom coasts require generation_version 4");
             if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3");
             if(config.hasOutlines()&&generationVersion<3)throw new IllegalArgumentException("Island outlines require generation_version 3");
         }
@@ -32,7 +33,7 @@ public final class WorldSnapshotStore {
             if(saved.has("generation_version")) {
                 if(!saved.get("generation_version").isJsonPrimitive() || !saved.getAsJsonPrimitive("generation_version").isNumber())throw new IslandConfigException("generation_version must be a number");
                 double number=saved.get("generation_version").getAsDouble();
-                if(!Double.isFinite(number)||number!=Math.rint(number)||number<1||number>3)throw new IslandConfigException("Unsupported generation_version");
+                if(!Double.isFinite(number)||number!=Math.rint(number)||number<1||number>4)throw new IslandConfigException("Unsupported generation_version");
                 version=(int)number;
             }
             IslandConfig config=saved.has("config")?IslandConfigLoader.parse(saved.get("config")):defaults.get(preset);

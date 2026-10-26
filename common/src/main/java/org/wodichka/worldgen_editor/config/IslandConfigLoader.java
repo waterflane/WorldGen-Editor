@@ -333,7 +333,8 @@ public final class IslandConfigLoader {
                     maxStretch,
                     minShapePower,
                     maxShapePower,
-                    outline
+                    outline,
+                    parseCoast(entry,path,type)
             ));
         }
 
@@ -375,6 +376,10 @@ public final class IslandConfigLoader {
             value.addProperty("temperature", entry.temperature().name().toLowerCase(java.util.Locale.ROOT));
             value.addProperty("biome_patch_size", entry.biomePatchSize());
             if(entry.outline()!=null)value.add("outline",entry.outline().toJson());
+            if(entry.coast()!=null) {
+                var coast=new JsonObject();coast.addProperty("beach_width_blocks",entry.coast().beachWidthBlocks());
+                coast.addProperty("shallow_ocean_width_blocks",entry.coast().shallowOceanWidthBlocks());value.add("coast",coast);
+            }
             value.add("exclude_biomes", GSON.toJsonTree(entry.excludedBiomes()));
             JsonObject noise = new JsonObject(); noise.addProperty("seed", entry.noise().seed());
             noise.addProperty("first_octave", entry.noise().firstOctave()); noise.addProperty("scale", entry.noise().scale());
@@ -391,6 +396,15 @@ public final class IslandConfigLoader {
         root.add("entries", entries);
         if(config.paintedMap()!=null)root.add("painted_map",config.paintedMap().toJson());
         return root;
+    }
+
+    private static CoastProfile parseCoast(JsonObject entry,String path,IslandEntryType type)throws IslandConfigException {
+        if(!entry.has("coast"))return null;
+        if(type==IslandEntryType.OCEAN)throw new IslandConfigException(path+".coast is only supported on land objects");
+        var coast=requireObject(entry.get("coast"),path+".coast");
+        if(!coast.has("beach_width_blocks")||!coast.has("shallow_ocean_width_blocks"))throw new IslandConfigException(path+".coast requires both widths");
+        return new CoastProfile(optionalRangeInt(coast,path+".coast",16,0,4096,"beach_width_blocks"),
+                optionalRangeInt(coast,path+".coast",128,0,4096,"shallow_ocean_width_blocks"));
     }
 
     private static List<String> parseBiomeSelectors(JsonArray array, String path) throws IslandConfigException {

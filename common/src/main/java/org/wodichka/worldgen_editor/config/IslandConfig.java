@@ -8,6 +8,7 @@ public record IslandConfig(boolean enabled, String outerOcean, List<IslandEntry>
     public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries,PaintedMap paintedMap) { this(enabled,outerOcean,entries,paintedMap,""); }
     public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries) { this(enabled,outerOcean,entries,null); }
     public IslandConfig withEnabled(boolean value) { return new IslandConfig(value,outerOcean,entries,paintedMap,name,oceanTemperature); }
+    public boolean hasCoasts() { return entries.stream().anyMatch(entry->entry.coast()!=null); }
     public boolean hasOutlines() { return entries.stream().anyMatch(entry->entry.outline()!=null); }
     public static final String DEFAULT_OUTER_OCEAN = "minecraft:deep_ocean";
     public static final IslandConfig EMPTY = new IslandConfig(false, DEFAULT_OUTER_OCEAN, List.of());

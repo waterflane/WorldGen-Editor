@@ -33,9 +33,11 @@ public record PresetDocument(IslandConfig config, int generationVersion) {
             body=root.getAsJsonObject("config");
         }
         boolean outlines=body.has("entries")&&body.get("entries").isJsonArray()&&java.util.stream.StreamSupport.stream(body.getAsJsonArray("entries").spliterator(),false).anyMatch(entry->entry.isJsonObject()&&entry.getAsJsonObject().has("outline"));
-        int version=integer(project?body:root,"generation_version",project?3:root.has("config")?1:body.has("painted_map")||outlines?3:2);
-        if(version<1||version>3)throw new IslandConfigException("Unsupported generation_version: "+version);
+        boolean coasts=body.has("entries")&&body.get("entries").isJsonArray()&&java.util.stream.StreamSupport.stream(body.getAsJsonArray("entries").spliterator(),false).anyMatch(entry->entry.isJsonObject()&&entry.getAsJsonObject().has("coast"));
+        int version=integer(project?body:root,"generation_version",project?(coasts?4:3):root.has("config")?1:coasts?4:body.has("painted_map")||outlines?3:2);
+        if(version<1||version>4)throw new IslandConfigException("Unsupported generation_version: "+version);
         if(body.has("painted_map")&&version<3)throw new IslandConfigException("Painted maps require generation_version 3. Select this map from the refreshed world-type list.");
+        if(coasts&&version<4)throw new IslandConfigException("Custom coasts require generation_version 4");
         if(outlines&&version<3)throw new IslandConfigException("Island outlines require generation_version 3");
         JsonObject config=body.deepCopy();
         if(root.has("name")&&body!=root)config.add("name",root.get("name"));

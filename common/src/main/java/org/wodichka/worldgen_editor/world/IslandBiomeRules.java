@@ -30,6 +30,7 @@ public final class IslandBiomeRules {
     private final Holder<Biome> lukewarmOceanBiome;
     private final Holder<Biome> deepLukewarmOceanBiome;
     private final Holder<Biome> warmOceanBiome;
+    private final Holder<Biome> snowyBeachBiome;
     private final Holder<Biome> beachBiome;
     private final Holder<Biome> plainsBiome;
     private final Holder<Biome> forestBiome;
@@ -69,6 +70,7 @@ public final class IslandBiomeRules {
         deepLukewarmOceanBiome = biomes.getHolderOrThrow(Biomes.DEEP_LUKEWARM_OCEAN);
         warmOceanBiome = biomes.getHolderOrThrow(Biomes.WARM_OCEAN);
         beachBiome = biomes.getHolderOrThrow(Biomes.BEACH);
+        snowyBeachBiome = biomes.getHolderOrThrow(Biomes.SNOWY_BEACH);
         plainsBiome = biomes.getHolderOrThrow(Biomes.PLAINS);
         forestBiome = biomes.getHolderOrThrow(Biomes.FOREST);
         meadowBiome = biomes.getHolderOrThrow(Biomes.MEADOW);
@@ -115,6 +117,33 @@ public final class IslandBiomeRules {
         return firstAllowed(candidates, source, fallback);
     }
 
+    /** Explicit metric coast bands are independent of the delegate's ocean temperature. */
+    public Holder<Biome> customCoastBiome(CoastField.Sample coast,Holder<Biome> delegate,int x,int z) {
+        return customCoastBiome(coast,delegate,x,z,null);
+    }
+    public Holder<Biome> customCoastBiome(CoastField.Sample coast,Holder<Biome> delegate,int x,int z,IslandMask.SourceInfo climateSource) {
+        double distance=coast.distance();var source=climateSource!=null?climateSource:coast.source();
+        if(distance<0) {
+            if(-distance>coast.profile().shallowOceanWidthBlocks())return outerOceanBiome();
+            ClimateBand climate=config.oceanTemperature()==null?configuredClimateBand(source):climateBand(config.oceanTemperature());
+            if(climate==null)climate=ClimateBand.TEMPERATE;
+            var candidates=switch(climate){
+                case COLD -> nonNullBiomes(frozenOceanBiome,coldOceanBiome);
+                case WARM -> nonNullBiomes(warmOceanBiome,lukewarmOceanBiome);
+                case TEMPERATE -> nonNullBiomes(oceanBiome);
+            };
+            var result=pickAllowed(candidates,source,x,z);
+            if(result!=null)return result;
+            warnAllExcluded(source);return oceanBiome;
+        }
+        if(isUnderground(delegate)||isRiver(delegate))return null;
+        if(distance<=coast.profile().beachWidthBlocks()&&coast.profile().beachWidthBlocks()>0) {
+            var beach=configuredClimateBand(source)==ClimateBand.COLD?snowyBeachBiome:beachBiome;
+            if(!isExcluded(beach,source))return beach;
+        }
+        return null;
+    }
+
     public Holder<Biome> outerOceanBiome() {
         return firstNonNull(outerOceanBiome, deepOceanBiome, oceanBiome);
     }
@@ -139,7 +168,7 @@ public final class IslandBiomeRules {
                 plainsBiome,
                 forestBiome,
                 meadowBiome,
-                beachBiome,
+                beachBiome, snowyBeachBiome,
                 snowyPlainsBiome,
                 taigaBiome,
                 savannaBiome,

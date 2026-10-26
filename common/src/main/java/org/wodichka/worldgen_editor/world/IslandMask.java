@@ -16,6 +16,7 @@ public final class IslandMask {
     private static final Logger LOGGER = LoggerFactory.getLogger(Worldgen_editor.MOD_ID);
     private static final int ARCHIPELAGO_MAX_ATTEMPTS_PER_ISLAND = 64;
 
+    private final CoastField coastField;
     private final List<CompiledIsland> landShapes;
     private final List<CompiledIsland> oceanShapes;
     private final List<CompiledParent> archipelagoParents;
@@ -48,6 +49,15 @@ public final class IslandMask {
         this.oceanShapes = List.copyOf(ocean);
         this.archipelagoParents = List.copyOf(parents);
         this.outlines=List.copyOf(drawn);
+        var bounds=new ArrayList<CoastField.Bounds>();var profiles=new ArrayList<org.wodichka.worldgen_editor.config.CoastProfile>();
+        for(var shape:land)if(shape.sourceInfo.coast()!=null) {
+            double reach=shape.multiplier*(1+shape.noiseStrength)+shape.edgeWidth;
+            double rx=shape.xDivisor*reach,rz=shape.zDivisor*reach;
+            double ex=Math.abs(shape.cos)*rx+Math.abs(shape.sin)*rz+4,ez=Math.abs(shape.sin)*rx+Math.abs(shape.cos)*rz+4;
+            bounds.add(new CoastField.Bounds(shape.centerX-ex,shape.centerZ-ez,shape.centerX+ex,shape.centerZ+ez));profiles.add(shape.sourceInfo.coast());
+        }
+        for(var shape:drawn)if(shape.source.coast()!=null){bounds.add(new CoastField.Bounds(shape.entry.centerX()-shape.extentX,shape.entry.centerZ()-shape.extentZ,shape.entry.centerX()+shape.extentX,shape.entry.centerZ()+shape.extentZ));profiles.add(shape.source.coast());}
+        coastField=profiles.isEmpty()?null:new CoastField(this::rawInfo,bounds,profiles);
     }
 
     public boolean isEmpty() {
@@ -68,6 +78,13 @@ public final class IslandMask {
     }
 
     private SampleInfo computeInfo(double blockX,double blockZ) {
+        var raw=rawInfo(blockX,blockZ);
+        if(coastField==null)return raw;
+        var coast=coastField.sample(blockX,blockZ,raw);
+        return coast==null?raw:new SampleInfo(coast.value(raw.value()),raw.landSource(),raw.oceanSource(),raw.archipelagoSource(),coast,raw.coastOwner());
+    }
+
+    private SampleInfo rawInfo(double blockX,double blockZ) {
         double union = 0.0D;
         double additive = 0.0D;
         double strongestLand = 0.0D;
@@ -108,11 +125,12 @@ public final class IslandMask {
         }
 
         double base=clamp01(Math.min(land,1.0D-ocean));
-        double value;
+        double value;SourceInfo coastOwner=null;
         if(outlines.isEmpty())value=paintedMap==null?base:paintedMap.apply(base,blockX,blockZ);
         else {
             var overlay=sampleOutlines(base,blockX,blockZ);value=overlay.value;
             if(overlay.source!=null) {
+                if(coastField!=null)coastOwner=overlay.source;
                 if(overlay.source.temperature()!=IslandTemperature.STANDARD || !overlay.source.excludedBiomes().isEmpty()) {
                     landSource=overlay.source;parentSource=null;oceanSource=null;
                 }else if(landSource==null&&parentSource==null)landSource=overlay.source;
@@ -120,7 +138,7 @@ public final class IslandMask {
         }
         if(value>base && landSource==null && parentSource==null)
             landSource=new SourceInfo("Painted land",IslandEntryType.ISLAND,null,0L,List.of(),IslandTemperature.STANDARD,512);
-        return new SampleInfo(value,landSource,oceanSource,parentSource);
+        return new SampleInfo(value,landSource,oceanSource,parentSource,null,coastOwner);
     }
 
     private record OutlineSample(double value,SourceInfo source) { }
@@ -168,13 +186,16 @@ public final class IslandMask {
     }
 
     public record SourceInfo(String name, IslandEntryType type, String parentName, long climateSeed, List<String> excludedBiomes,
-                             IslandTemperature temperature, int biomePatchSize) {
+                             IslandTemperature temperature, int biomePatchSize, org.wodichka.worldgen_editor.config.CoastProfile coast) {
+        public SourceInfo(String name,IslandEntryType type,String parentName,long climateSeed,List<String> excludedBiomes,IslandTemperature temperature,int biomePatchSize){this(name,type,parentName,climateSeed,excludedBiomes,temperature,biomePatchSize,null);}
         public SourceInfo {
             excludedBiomes = List.copyOf(excludedBiomes);
         }
     }
 
-    public record SampleInfo(double value, SourceInfo landSource, SourceInfo oceanSource, SourceInfo archipelagoSource) {
+    public record SampleInfo(double value, SourceInfo landSource, SourceInfo oceanSource, SourceInfo archipelagoSource, CoastField.Sample coast, SourceInfo coastOwner) {
+        public SampleInfo(double value,SourceInfo landSource,SourceInfo oceanSource,SourceInfo archipelagoSource){this(value,landSource,oceanSource,archipelagoSource,null,null);}
+
     }
 
     private static void compileArchipelago(IslandEntry entry, List<CompiledIsland> land) {
@@ -248,7 +269,8 @@ public final class IslandMask {
                 mix(worldSeed, stableStringSeed(entry.noise().seed())),
                 entry.excludedBiomes(),
                 entry.temperature(),
-                entry.biomePatchSize()
+                entry.biomePatchSize(),
+                entry.coast()
         );
     }
 

@@ -32,7 +32,7 @@ public final class WorldSnapshotStoreTest {
         Files.writeString(state,invalidTemperature.toString());
         try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid ocean setting accepted");}
         catch(IslandConfigException expected){check(Files.readString(state).equals(invalidTemperature.toString()),"failed ocean load rewrote snapshot");}
-        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":4}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
+        for(String invalid:new String[]{"{", "{\"enabled\":\"false\"}","{\"generation_version\":1.5}","{\"generation_version\":5}","{\"generation_version\":\"2\"}","{\"preset\":\"../escape\"}"}){
             Files.writeString(state,invalid);
             try{WorldSnapshotStore.loadOrCreate(state,"default",1,name->config);throw new AssertionError("invalid snapshot accepted");}
             catch(IslandConfigException expected){check(Files.readString(state).equals(invalid),"failed load rewrote the snapshot");}
