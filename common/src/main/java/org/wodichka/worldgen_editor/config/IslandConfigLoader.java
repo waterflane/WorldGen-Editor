@@ -353,7 +353,7 @@ public final class IslandConfigLoader {
                 throw new IslandConfigException("Noise amplitudes/scale or shape parameters exceed supported limits");
             }
         }
-        return new IslandConfig(enabled, outerOcean, parsedEntries, paintedMap,displayName,oceanTemperature);
+        return new IslandConfig(enabled, outerOcean, parsedEntries, paintedMap,displayName,oceanTemperature,parseTemperature(optionalString(object,"temperature","standard","root"),"root"));
     }
 
     public static JsonObject toJson(IslandConfig config) {
@@ -361,6 +361,7 @@ public final class IslandConfigLoader {
         if(!config.name().isEmpty())root.addProperty("name",config.name());
         root.addProperty("enabled", config.enabled());
         root.addProperty("outer_ocean", config.outerOcean());
+        if(config.temperature()!=IslandTemperature.STANDARD)root.addProperty("temperature",config.temperature().id());
         if (config.oceanTemperature() != null) root.addProperty("ocean_temperature", config.oceanTemperature().name().toLowerCase(java.util.Locale.ROOT));
         JsonArray entries = new JsonArray();
         for (IslandEntry entry : config.entries()) {
@@ -373,7 +374,7 @@ public final class IslandConfigLoader {
             value.addProperty("rotation", entry.rotationDegrees()); value.addProperty("shape_power", entry.shapePower());
             value.addProperty("multiplier", entry.multiplier()); value.addProperty("roughness", entry.noiseStrength());
             value.addProperty("shore_width", entry.edgeWidth());
-            value.addProperty("temperature", entry.temperature().name().toLowerCase(java.util.Locale.ROOT));
+            value.addProperty("temperature", entry.temperature().id());
             value.addProperty("biome_patch_size", entry.biomePatchSize());
             if(entry.outline()!=null)value.add("outline",entry.outline().toJson());
             if(entry.coast()!=null) {
@@ -474,13 +475,8 @@ public final class IslandConfigLoader {
     }
 
     private static IslandTemperature parseTemperature(String value, String path) throws IslandConfigException {
-        return switch (value.toLowerCase(java.util.Locale.ROOT)) {
-            case "standard", "standart", "vanilla", "auto" -> IslandTemperature.STANDARD;
-            case "cold" -> IslandTemperature.COLD;
-            case "temperate", "normal" -> IslandTemperature.TEMPERATE;
-            case "warm", "hot" -> IslandTemperature.WARM;
-            default -> throw new IslandConfigException(path + ".temperature must be one of standard, cold, temperate, warm");
-        };
+        try { return IslandTemperature.parse(value); }
+        catch(IllegalArgumentException error) { throw new IslandConfigException(path+".temperature: "+error.getMessage()); }
     }
 
     private static List<Double> parseAmplitudes(JsonArray array, int entryIndex) throws IslandConfigException {

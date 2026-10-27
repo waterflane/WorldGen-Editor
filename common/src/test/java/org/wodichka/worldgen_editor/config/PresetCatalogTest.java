@@ -27,7 +27,7 @@ public final class PresetCatalogTest {
         Files.writeString(dir.resolve("broken.json"),"{\"name\":\"Broken Map\",\"entries\":\"invalid\"}");
         check(catalog.scan().stream().anyMatch(e->e.name().equals("Broken Map")&&e.error()!=null),"invalid named map lost its display name");
         for(String name:new String[]{"../escape","..","/root","a\\b","bad:name","CON","name."," name"})check(!IslandConfigLoader.isSafePresetName(name),"unsafe filename accepted: "+name);
-        for(String invalid:new String[]{"{\"format\":\"future\",\"config\":{\"entries\":[]}}","{\"format\":\"wge-map-project\",\"version\":2,\"config\":{\"entries\":[]}}","{\"generation_version\":5,\"entries\":[]}"}){
+        for(String invalid:new String[]{"{\"format\":\"future\",\"config\":{\"entries\":[]}}","{\"format\":\"wge-map-project\",\"version\":2,\"config\":{\"entries\":[]}}","{\"generation_version\":6,\"entries\":[]}"}){
             try{PresetDocument.parse(JsonParser.parseString(invalid).getAsJsonObject());throw new AssertionError("unsupported document accepted");}catch(IslandConfigException expected){}
         }
         if(args.length>0){var actual=PresetDocument.read(Path.of(args[0]));check(actual.generationVersion()==3&&actual.config().paintedMap()!=null,"actual project import failed");System.out.println("Actual editor project validated");}

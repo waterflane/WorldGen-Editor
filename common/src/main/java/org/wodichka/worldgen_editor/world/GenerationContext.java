@@ -8,9 +8,10 @@ import org.wodichka.worldgen_editor.config.IslandConfig;
 public record GenerationContext(long seed, IslandConfig config, int generationVersion,
                                 Registry<Biome> biomes, IslandMask mask, IslandBiomeRules biomeRules) {
     public static final int LEGACY_VERSION = 1;
-    public static final int CURRENT_VERSION = 4;
+    public static final int CURRENT_VERSION = 5;
 
     public GenerationContext {
+        if(config.hasModernClimate()&&generationVersion<5)throw new IllegalArgumentException("Extended temperatures require generation_version 5");
         if(config.hasCoasts()&&generationVersion<4)throw new IllegalArgumentException("Custom coasts require generation_version 4; create a new world with this preset");
         if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3; create a new custom-map world");
         if(generationVersion<3&&config.entries().stream().anyMatch(entry->entry.outline()!=null))throw new IllegalArgumentException("Island outlines require generation_version 3");

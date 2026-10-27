@@ -24,7 +24,7 @@ public final class IslandBiomeSource extends BiomeSource {
     public static final MapCodec<IslandBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("delegate").forGetter(source -> source.delegate),
             Codec.STRING.optionalFieldOf("preset", DEFAULT_PRESET).forGetter(source -> source.presetName),
-            Codec.intRange(1, 4).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
+            Codec.intRange(1, 5).optionalFieldOf("generation_version", 1).forGetter(source -> source.generationVersion),
             RegistryOps.retrieveGetter(Registries.BIOME)
     ).apply(instance, IslandBiomeSource::new));
 
@@ -64,7 +64,7 @@ public final class IslandBiomeSource extends BiomeSource {
     public BiomeSource delegate() { return delegate; }
     public int generationVersion() { return generationVersion; }
     public GenerationBinding binding() { return binding; }
-    public void bind(GenerationBinding value) { binding.attach(value); }
+    public void bind(GenerationBinding value) { binding.attach(value); if(binding.get()!=null)binding.get().biomeRules().bindDelegate(delegate.possibleBiomes()); }
     public void seaLevel(int value){seaLevel=value;}
 
     /** Returns a biome only if this column's WGE rule is independent of Y and the delegate. */

@@ -49,6 +49,9 @@ public final class IslandBiomeRules {
     private final List<TagKey<Biome>> SNOWY_TAGS = List.of(tag("c:is_snowy"), tag("forge:is_snowy"), tag("c:snowy"), tag("forge:snowy"));
     private final List<TagKey<Biome>> TEMPERATE_TAGS = List.of(tag("c:is_temperate"), tag("forge:is_temperate"), tag("c:temperate"), tag("forge:temperate"));
 
+    private final BiomeClimateCatalog catalog;
+    private java.util.Set<Holder<Biome>> delegateCandidates;
+    private final java.util.Map<IslandTemperature,List<Holder<Biome>>> climateCandidates=new java.util.concurrent.ConcurrentHashMap<>();
     private final Registry<Biome> biomeRegistry;
     private final IslandConfig config;
     private final long worldSeed;
@@ -57,6 +60,13 @@ public final class IslandBiomeRules {
 
     public IslandBiomeRules(Registry<Biome> biomes, IslandConfig config, long seed, int version) {
         this.biomeRegistry = biomes;
+        this.catalog=new BiomeClimateCatalog(biomes);
+        if(version>=5){
+            java.util.stream.Stream.concat(java.util.stream.Stream.of(config.temperature()),config.entries().stream().map(e->e.temperature()))
+                .filter(IslandTemperature::special).distinct().forEach(choice->{
+                    if(catalog.candidates(choice).isEmpty())throw new IllegalArgumentException("No surface biomes available for temperature "+choice.id());
+                });
+        }
         this.config = config;
         this.worldSeed = seed;
         this.generationVersion = version;
@@ -160,6 +170,7 @@ public final class IslandBiomeRules {
             if(!isExcluded(beach,source))return beach;
         }
         // Do not let the original continentalness beach create a second inland sand ring.
+        if(generationVersion>=5&&(isOceanBiome(delegate)||isBeach(delegate)))return modernLandBiome(source,delegate,x,z);
         if(isOceanBiome(delegate)||isBeach(delegate)){
             ClimateBand climate=configuredClimateBand(source);
             var candidates=climate==ClimateBand.COLD?nonNullBiomes(snowyPlainsBiome,taigaBiome)
@@ -192,6 +203,7 @@ public final class IslandBiomeRules {
     }
 
     public List<Holder<Biome>> fallbackLandBiomes() {
+        if(generationVersion>=5)return java.util.stream.Stream.concat(catalog.surface().stream(),nonNullBiomes(beachBiome,snowyBeachBiome,riverBiome,frozenRiverBiome).stream()).toList();
         return nonNullBiomes(
                 plainsBiome,
                 forestBiome,
@@ -236,7 +248,7 @@ public final class IslandBiomeRules {
     }
 
     public Holder<Biome> landBiome(double islandMask, IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ) {
-        if (source == null) {
+        if (source == null && generationVersion<5) {
             Holder<Biome> coast = replaceOceanDelegateOnLand(islandMask, delegate);
             if (coast != null) {
                 return coast;
@@ -255,6 +267,7 @@ public final class IslandBiomeRules {
         if (generationVersion >= 2 && isUnderground(delegate) && !isExcluded(delegate, source)) {
             return delegate;
         }
+        if(generationVersion>=5)return modernLandBiome(source,delegate,blockX,blockZ);
         Holder<Biome> coast = configured == null || generationVersion < 2
                 ? replaceOceanDelegateOnLand(islandMask, delegate) : null;
         if (coast != null && !isExcluded(coast, source)) {
@@ -286,6 +299,32 @@ public final class IslandBiomeRules {
             case WARM -> firstNonNull(savannaBiome, jungleBiome, desertBiome, plainsBiome, delegate);
             case TEMPERATE -> firstNonNull(plainsBiome, forestBiome, meadowBiome, delegate);
         };
+    }
+
+    public void bindDelegate(java.util.Set<Holder<Biome>> candidates){
+        if(generationVersion<5)return;
+        delegateCandidates=java.util.Set.copyOf(candidates);climateCandidates.clear();
+    }
+    private IslandTemperature landSelection(IslandMask.SourceInfo source){
+        var choice=source==null?IslandTemperature.STANDARD:source.temperature();
+        return choice==IslandTemperature.STANDARD?config.temperature():choice;
+    }
+    private Holder<Biome> modernLandBiome(IslandMask.SourceInfo source,Holder<Biome> delegate,int x,int z){
+        var choice=landSelection(source);
+        if(delegate!=null&&!isExcluded(delegate,source)&&catalog.matches(delegate,choice))return delegate;
+        var candidates=climateCandidates.computeIfAbsent(choice,c->catalog.candidates(c).stream()
+                .filter(b->c.special()||delegateCandidates==null||delegateCandidates.contains(b)).toList());
+        var allowed=candidates.stream().filter(b->!isExcluded(b,source)).toList();
+        if(allowed.isEmpty())throw new IllegalStateException("No allowed surface biome for "+choice.id());
+        // Preserve the delegate's climate affinity; stable IDs break ties reproducibly.
+        if(delegate!=null&&!isOceanBiome(delegate)){
+            double best=Double.POSITIVE_INFINITY;Holder<Biome> result=null;
+            for(var b:allowed){double dt=b.value().getBaseTemperature()-delegate.value().getBaseTemperature();
+                double score=dt*dt+(b.value().hasPrecipitation()==delegate.value().hasPrecipitation()?0:.25);
+                if(score<best){best=score;result=b;}}
+            if(result!=null)return result;
+        }
+        return pickAllowed(allowed,source,x,z);
     }
 
     private Holder<Biome> replaceOceanDelegateOnLand(double islandMask, Holder<Biome> delegate) {
@@ -407,10 +446,9 @@ public final class IslandBiomeRules {
     }
 
     private ClimateBand configuredClimateBand(IslandMask.SourceInfo source) {
-        if (source == null || source.temperature() == null || source.temperature() == IslandTemperature.STANDARD) {
-            return null;
-        }
-        return climateBand(source.temperature());
+        if(generationVersion>=5)return climateBand(landSelection(source));
+        if (source == null || source.temperature() == null || source.temperature() == IslandTemperature.STANDARD) return null;
+        return climateBand(generationVersion>=5?landSelection(source):source.temperature());
     }
 
     private ClimateBand climateBand(IslandTemperature temperature) {
@@ -418,7 +456,7 @@ public final class IslandBiomeRules {
             case COLD -> ClimateBand.COLD;
             case TEMPERATE -> ClimateBand.TEMPERATE;
             case WARM -> ClimateBand.WARM;
-            case STANDARD -> null;
+            default -> null;
         };
     }
 

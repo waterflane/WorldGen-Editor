@@ -33,7 +33,7 @@ public final class WorldSnapshotStore {
             if(saved.has("generation_version")) {
                 if(!saved.get("generation_version").isJsonPrimitive() || !saved.getAsJsonPrimitive("generation_version").isNumber())throw new IslandConfigException("generation_version must be a number");
                 double number=saved.get("generation_version").getAsDouble();
-                if(!Double.isFinite(number)||number!=Math.rint(number)||number<1||number>4)throw new IslandConfigException("Unsupported generation_version");
+                if(!Double.isFinite(number)||number!=Math.rint(number)||number<1||number>5)throw new IslandConfigException("Unsupported generation_version");
                 version=(int)number;
             }
             IslandConfig config=saved.has("config")?IslandConfigLoader.parse(saved.get("config")):defaults.get(preset);

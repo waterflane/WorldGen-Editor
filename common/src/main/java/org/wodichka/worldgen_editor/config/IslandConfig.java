@@ -3,11 +3,13 @@ package org.wodichka.worldgen_editor.config;
 import java.util.List;
 
 public record IslandConfig(boolean enabled, String outerOcean, List<IslandEntry> entries, PaintedMap paintedMap, String name,
-                           IslandTemperature oceanTemperature) {
+                           IslandTemperature oceanTemperature, IslandTemperature temperature) {
+    public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries,PaintedMap paintedMap,String name,IslandTemperature oceanTemperature) { this(enabled,outerOcean,entries,paintedMap,name,oceanTemperature,IslandTemperature.STANDARD); }
     public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries,PaintedMap paintedMap,String name) { this(enabled,outerOcean,entries,paintedMap,name,null); }
     public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries,PaintedMap paintedMap) { this(enabled,outerOcean,entries,paintedMap,""); }
     public IslandConfig(boolean enabled,String outerOcean,List<IslandEntry> entries) { this(enabled,outerOcean,entries,null); }
-    public IslandConfig withEnabled(boolean value) { return new IslandConfig(value,outerOcean,entries,paintedMap,name,oceanTemperature); }
+    public IslandConfig withEnabled(boolean value) { return new IslandConfig(value,outerOcean,entries,paintedMap,name,oceanTemperature,temperature); }
+    public boolean hasModernClimate() { return temperature!=IslandTemperature.STANDARD || entries.stream().anyMatch(e->e.temperature().modern()); }
     public boolean hasCoasts() { return entries.stream().anyMatch(entry->entry.coast()!=null); }
     public boolean hasOutlines() { return entries.stream().anyMatch(entry->entry.outline()!=null); }
     public static final String DEFAULT_OUTER_OCEAN = "minecraft:deep_ocean";
@@ -19,7 +21,7 @@ public record IslandConfig(boolean enabled, String outerOcean, List<IslandEntry>
         }
         entries = List.copyOf(entries);
         name = name == null ? "" : name;
-        if (oceanTemperature == IslandTemperature.STANDARD) {
+        if (oceanTemperature != null && oceanTemperature != IslandTemperature.COLD && oceanTemperature != IslandTemperature.TEMPERATE && oceanTemperature != IslandTemperature.WARM) {
             throw new IllegalArgumentException("ocean_temperature must be temperate, cold or warm; omit it for default behavior");
         }
     }
