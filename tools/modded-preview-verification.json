@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "profiles": {
+    "supported-combined": {
+      "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-combined",
+          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 416,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "biomesoplenty",
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 63.91,
+          "map": "base"
+        },
+        {
+          "profile": "supported-combined",
+          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 416,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 64.91,
+          "map": "coast"
+        },
+        {
+          "profile": "supported-combined",
+          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "seed": "3",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 416,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "biomesoplenty",
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 62.23,
+          "map": "coast",
+          "reopened_world": true
+        }
+      ]
+    },
+    "supported-terrablender": {
+      "resources": "neoforge-preview-3-b3c4128ab40bdcbd80dba872b78d39f836be0befa4c8a27c01da1421e48c1605",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-terrablender",
+          "resources": "neoforge-preview-3-b3c4128ab40bdcbd80dba872b78d39f836be0befa4c8a27c01da1421e48c1605",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 160,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "minecraft"
+          ],
+          "elapsed_seconds": 45.83,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-bop": {
+      "resources": "neoforge-preview-3-34cec23be19cc046f3f9a220594099db0072ee6895391c6a74439f3ad57f6369",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-bop",
+          "resources": "neoforge-preview-3-34cec23be19cc046f3f9a220594099db0072ee6895391c6a74439f3ad57f6369",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 320,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "biomesoplenty",
+            "minecraft"
+          ],
+          "elapsed_seconds": 50.52,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-terralith": {
+      "resources": "neoforge-preview-3-77c0cd3cf4d0bf3aeeb6bd8ea4ddb8c45d15e27c2b78bf31f2d3612658e9ef9c",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-terralith",
+          "resources": "neoforge-preview-3-77c0cd3cf4d0bf3aeeb6bd8ea4ddb8c45d15e27c2b78bf31f2d3612658e9ef9c",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 256,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 50.48,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-tectonic": {
+      "resources": "neoforge-preview-3-338fec40cdca59b51cc87dcf9a070840c364fad82b43224c17e9743b1b3603ca",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-tectonic",
+          "resources": "neoforge-preview-3-338fec40cdca59b51cc87dcf9a070840c364fad82b43224c17e9743b1b3603ca",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 160,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "minecraft"
+          ],
+          "elapsed_seconds": 43.11,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-terratonic": {
+      "resources": "neoforge-preview-3-42a88109e8d4186a71a3fe0dc5589d622f41b4dba065f1386c3aa640e5ad8198",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-terratonic",
+          "resources": "neoforge-preview-3-42a88109e8d4186a71a3fe0dc5589d622f41b4dba065f1386c3aa640e5ad8198",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 256,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 60.47,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-bop_terralith": {
+      "resources": "neoforge-preview-3-f4eab766636d6f0bad217383761a28cdb237156d40903c6c2733a7291ea7c8c6",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-bop_terralith",
+          "resources": "neoforge-preview-3-f4eab766636d6f0bad217383761a28cdb237156d40903c6c2733a7291ea7c8c6",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 416,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "biomesoplenty",
+            "minecraft",
+            "terralith"
+          ],
+          "elapsed_seconds": 54.06,
+          "map": "base"
+        }
+      ]
+    },
+    "supported-bop_tectonic": {
+      "resources": "neoforge-preview-3-234d6f5f2ec5367eb1f5fea22d60ab868be6f2fd7c51fabde6434923c835f339",
+      "status": "verified",
+      "cases": [
+        {
+          "profile": "supported-bop_tectonic",
+          "resources": "neoforge-preview-3-234d6f5f2ec5367eb1f5fea22d60ab868be6f2fd7c51fabde6434923c835f339",
+          "seed": "2",
+          "generation_version": 5,
+          "world_preset": "minecraft:normal",
+          "biome_samples": 160,
+          "base_height_samples": 40,
+          "category_context_samples": 320,
+          "finished_chunks": 15,
+          "mismatches": 0,
+          "multiple_sessions_without_restart": true,
+          "pinned_snapshot": true,
+          "biome_namespaces": [
+            "biomesoplenty",
+            "minecraft"
+          ],
+          "elapsed_seconds": 59.11,
+          "map": "base"
+        }
+      ]
+    }
+  }
+}

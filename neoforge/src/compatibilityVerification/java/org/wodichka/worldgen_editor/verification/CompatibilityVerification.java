@@ -22,6 +22,7 @@ public final class CompatibilityVerification {
         if(response.statusCode()!=200)throw new AssertionError(response.body());return JsonParser.parseString(response.body()).getAsJsonObject();
     }
     public static void verify(GameTestHelper helper)throws Exception {
+        if(System.getProperty("wge.moddedPreviewUrl")!=null){ModdedPreviewVerification.verify(helper);return;}
         var level=helper.getLevel();var context=IslandWorldState.context();
         helper.assertTrue(context!=null&&context.generationVersion()==3,"Expected version 3 world");
         var generator=(NoiseBasedChunkGenerator)level.getChunkSource().getGenerator();

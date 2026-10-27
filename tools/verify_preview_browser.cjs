@@ -1,0 +1,46 @@
+const {chromium}=require(process.env.WGE_PLAYWRIGHT_MODULE||'playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path');
+const output=name=>path.resolve(__dirname,'../build',name);
+(async()=>{
+ const browser=await chromium.launch({...(process.env.WGE_CHROME_PATH?{executablePath:process.env.WGE_CHROME_PATH}:{channel:'chrome'}),headless:true});
+ try{
+  const context=await browser.newContext({viewport:{width:1440,height:920}}),page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+  await page.addInitScript(()=>{window.uiLongTasks=[];new PerformanceObserver(list=>window.uiLongTasks.push(...list.getEntries().map(e=>({duration:e.duration,start:e.startTime})))).observe({type:'longtask',buffered:true});});
+  await page.goto(process.env.WGE_PREVIEW_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>window.WgeProfiles?.catalog&&window.WgeProfiles.selection.id==='vanilla');
+  const interactionStart=await page.evaluate(()=>performance.now());
+  assert.equal(await page.locator('#generationProfile option[value="supported-combined"]').count(),1);
+  await page.locator('#newMapButton').click();
+  await page.locator('#sourceButton').click();
+  await page.locator('#workspaceJsonInput').fill(JSON.stringify({generation_version:5,enabled:true,name:'Browser verification',entries:[{x:0,z:0,radius:512}]}));
+  await page.locator('#applySourceButton').click();await page.locator('#sourceDialog').waitFor({state:'hidden'});
+  await page.locator('#mapTemperature').selectOption('minecraft:mushroom');
+  await page.locator('.viewport-options > summary').click();await page.locator('#heightMode').selectOption('300');await page.locator('.viewport-options > summary').click();
+  await page.locator('#editorSeed').fill('2');await page.locator('#editorSeed').press('Enter');
+  await page.waitForFunction(()=>WgePreview.snapshot().seed==='2'&&JSON.parse(WgePreview.snapshot().document).temperature==='minecraft:mushroom');
+  const previous=await page.evaluate(()=>WgePreview.snapshot().document);
+  await page.locator('#sourceButton').click();await page.locator('#workspaceJsonInput').fill(JSON.stringify({generation_version:5,enabled:true,name:'Unavailable category',temperature:'biomesoplenty:mushroom',entries:[{x:0,z:0,radius:512}]}));
+  await page.locator('#applySourceButton').click();await page.locator('#sourceDialog').waitFor({state:'hidden'});
+  await page.locator('#applyEditorButton').click();
+  await page.waitForFunction(()=>document.getElementById('editorStatus').textContent.includes('No surface biomes'));
+  assert.equal(await page.evaluate(()=>WgePreview.snapshot().document),previous);
+  await page.locator('#mapTemperature').selectOption('minecraft:mushroom');await page.locator('#mapTemperature').press('Enter');
+  await page.waitForFunction(()=>JSON.parse(WgePreview.snapshot().document).name==='Unavailable category');
+  await page.locator('#generationProfile').selectOption('supported-combined');
+  await page.waitForFunction(()=>window.WgeProfiles.selection.id==='supported-combined',{},{timeout:90000});
+  const groups=await page.locator('#mapTemperature optgroup').evaluateAll(groups=>groups.map(g=>g.label));assert.ok(groups.includes('Terralith'));assert.ok(groups.some(g=>g.includes('Plenty')));
+  await page.locator('#mapTemperature').selectOption('biomesoplenty:mushroom');
+  const nativeTile=page.waitForResponse(async response=>response.url().endsWith('/api/tile')&&response.status()===200&&(await response.json()).palette?.includes('biomesoplenty:fungal_jungle'),{timeout:60000});
+  await page.locator('#editorName').fill('Modded verification');await page.locator('#editorName').press('Enter');await nativeTile;
+  await page.waitForFunction(()=>typeof lastBiomeMap!=='undefined'&&lastBiomeMap?.palette.includes('biomesoplenty:fungal_jungle'));
+  const pixel=await page.evaluate(()=>{const i=lastBiomeMap.indices.findIndex(v=>lastBiomeMap.palette[v]==='biomesoplenty:fungal_jungle'),rect=document.getElementById('previewCanvas').getBoundingClientRect();return {x:rect.x+(i%lastBiomeMap.width+.5)/lastBiomeMap.width*rect.width,y:rect.y+(Math.floor(i/lastBiomeMap.width)+.5)/lastBiomeMap.height*rect.height};});
+  await page.mouse.move(pixel.x,pixel.y);await page.locator('#biomeTooltip').waitFor({state:'visible'});
+  const tooltip=await page.locator('#biomeTooltip').textContent();assert.ok(tooltip.includes('biomesoplenty:fungal_jungle'));assert.ok(tooltip.includes('Plenty'));
+  assert.deepEqual(errors,[]);
+  await page.screenshot({path:output('modded-workspace.png'),fullPage:true});
+  const result={isolated_chromium:true,real_java_api:true,seed_enter:true,temperature_enter:true,unavailable_category_preserves_preview:true,modded_profile_ui:true,bop_category_tile:true,biome_tooltip:true,page_errors:errors,long_tasks:await page.evaluate(()=>window.uiLongTasks)};
+  result.interaction_long_tasks=result.long_tasks.filter(task=>task.start>=interactionStart);
+  fs.writeFileSync(output('modded-browser-verification.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});
