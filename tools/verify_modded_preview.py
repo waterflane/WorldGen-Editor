@@ -79,3 +79,14 @@ for name in profiles:
         print(f'PASS {name} {map_name}: {case["biome_samples"]} biomes, {case["base_height_samples"]} heights, {case["category_context_samples"]} category samples', flush=True)
     entry['status'] = 'verified'
     report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+
+if 'combined' in profiles and report['profiles'].get('supported-terrablender', {}).get('status') == 'verified':
+    # Both requests force a clean child process; random launcher pack labels must not invalidate proof.
+    for profile_id in ['supported-terrablender', 'supported-combined']:
+        restarted = api('catalog?profile=' + profile_id)
+        entry = report['profiles'][profile_id]
+        if restarted['resources'] != entry['resources']:
+            raise AssertionError('Profile fingerprint changed across a clean process restart: ' + profile_id)
+        entry['restart_fingerprint_stable'] = True
+    report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    print('PASS clean process restarts retain verified resource fingerprints', flush=True)

@@ -2,12 +2,12 @@
   "schema": 1,
   "profiles": {
     "supported-combined": {
-      "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+      "resources": "neoforge-preview-3-269d0728f319ce5443b2f059c319a4d2d52a4feeee11324bd95400d8b7ebca40",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-combined",
-          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "resources": "neoforge-preview-3-269d0728f319ce5443b2f059c319a4d2d52a4feeee11324bd95400d8b7ebca40",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -23,12 +23,13 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 63.91,
+          "reopened_world": false,
+          "elapsed_seconds": 62.56,
           "map": "base"
         },
         {
           "profile": "supported-combined",
-          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "resources": "neoforge-preview-3-269d0728f319ce5443b2f059c319a4d2d52a4feeee11324bd95400d8b7ebca40",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -43,12 +44,13 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 64.91,
+          "reopened_world": false,
+          "elapsed_seconds": 63.58,
           "map": "coast"
         },
         {
           "profile": "supported-combined",
-          "resources": "neoforge-preview-3-08b191bc3d7393e064120c98e1b0e2f53880ddc6550f620cafd66361c1fcb0d3",
+          "resources": "neoforge-preview-3-269d0728f319ce5443b2f059c319a4d2d52a4feeee11324bd95400d8b7ebca40",
           "seed": "3",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -64,19 +66,20 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 62.23,
-          "map": "coast",
-          "reopened_world": true
+          "reopened_world": true,
+          "elapsed_seconds": 59.77,
+          "map": "coast"
         }
-      ]
+      ],
+      "restart_fingerprint_stable": true
     },
     "supported-terrablender": {
-      "resources": "neoforge-preview-3-b3c4128ab40bdcbd80dba872b78d39f836be0befa4c8a27c01da1421e48c1605",
+      "resources": "neoforge-preview-3-df084b109f951b1e259a4210cca8bc19cb02805648e0275ae5fc2ec6378a4756",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-terrablender",
-          "resources": "neoforge-preview-3-b3c4128ab40bdcbd80dba872b78d39f836be0befa4c8a27c01da1421e48c1605",
+          "resources": "neoforge-preview-3-df084b109f951b1e259a4210cca8bc19cb02805648e0275ae5fc2ec6378a4756",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -90,18 +93,20 @@
           "biome_namespaces": [
             "minecraft"
           ],
-          "elapsed_seconds": 45.83,
+          "reopened_world": false,
+          "elapsed_seconds": 44.75,
           "map": "base"
         }
-      ]
+      ],
+      "restart_fingerprint_stable": true
     },
     "supported-bop": {
-      "resources": "neoforge-preview-3-34cec23be19cc046f3f9a220594099db0072ee6895391c6a74439f3ad57f6369",
+      "resources": "neoforge-preview-3-86bdbbcf1becc1c715e6687e51f3194574869f74d76d1486b78e1ac0161d7a0b",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-bop",
-          "resources": "neoforge-preview-3-34cec23be19cc046f3f9a220594099db0072ee6895391c6a74439f3ad57f6369",
+          "resources": "neoforge-preview-3-86bdbbcf1becc1c715e6687e51f3194574869f74d76d1486b78e1ac0161d7a0b",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -116,18 +121,19 @@
             "biomesoplenty",
             "minecraft"
           ],
-          "elapsed_seconds": 50.52,
+          "reopened_world": false,
+          "elapsed_seconds": 50.91,
           "map": "base"
         }
       ]
     },
     "supported-terralith": {
-      "resources": "neoforge-preview-3-77c0cd3cf4d0bf3aeeb6bd8ea4ddb8c45d15e27c2b78bf31f2d3612658e9ef9c",
+      "resources": "neoforge-preview-3-2025a4fc111ac7c7472b458ce0ccb10fe8adcf8d20e5445e32940bc5644e8fe5",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-terralith",
-          "resources": "neoforge-preview-3-77c0cd3cf4d0bf3aeeb6bd8ea4ddb8c45d15e27c2b78bf31f2d3612658e9ef9c",
+          "resources": "neoforge-preview-3-2025a4fc111ac7c7472b458ce0ccb10fe8adcf8d20e5445e32940bc5644e8fe5",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -142,18 +148,19 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 50.48,
+          "reopened_world": false,
+          "elapsed_seconds": 50.72,
           "map": "base"
         }
       ]
     },
     "supported-tectonic": {
-      "resources": "neoforge-preview-3-338fec40cdca59b51cc87dcf9a070840c364fad82b43224c17e9743b1b3603ca",
+      "resources": "neoforge-preview-3-973f49d5426f514e9a0934b6903443da5ffcfcca9f17fca0d0800bdaea1c73ed",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-tectonic",
-          "resources": "neoforge-preview-3-338fec40cdca59b51cc87dcf9a070840c364fad82b43224c17e9743b1b3603ca",
+          "resources": "neoforge-preview-3-973f49d5426f514e9a0934b6903443da5ffcfcca9f17fca0d0800bdaea1c73ed",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -167,18 +174,19 @@
           "biome_namespaces": [
             "minecraft"
           ],
-          "elapsed_seconds": 43.11,
+          "reopened_world": false,
+          "elapsed_seconds": 45.98,
           "map": "base"
         }
       ]
     },
     "supported-terratonic": {
-      "resources": "neoforge-preview-3-42a88109e8d4186a71a3fe0dc5589d622f41b4dba065f1386c3aa640e5ad8198",
+      "resources": "neoforge-preview-3-3d5471f34b4a37cea42451db9ffb11c064e7901f767a9739c518b54e8258819c",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-terratonic",
-          "resources": "neoforge-preview-3-42a88109e8d4186a71a3fe0dc5589d622f41b4dba065f1386c3aa640e5ad8198",
+          "resources": "neoforge-preview-3-3d5471f34b4a37cea42451db9ffb11c064e7901f767a9739c518b54e8258819c",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -193,18 +201,19 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 60.47,
+          "reopened_world": false,
+          "elapsed_seconds": 61.34,
           "map": "base"
         }
       ]
     },
     "supported-bop_terralith": {
-      "resources": "neoforge-preview-3-f4eab766636d6f0bad217383761a28cdb237156d40903c6c2733a7291ea7c8c6",
+      "resources": "neoforge-preview-3-21c41ac6e49d6d4de26f9f9646b9d52b7ee314ad995755e45a33b0fa137525db",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-bop_terralith",
-          "resources": "neoforge-preview-3-f4eab766636d6f0bad217383761a28cdb237156d40903c6c2733a7291ea7c8c6",
+          "resources": "neoforge-preview-3-21c41ac6e49d6d4de26f9f9646b9d52b7ee314ad995755e45a33b0fa137525db",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -220,18 +229,19 @@
             "minecraft",
             "terralith"
           ],
-          "elapsed_seconds": 54.06,
+          "reopened_world": false,
+          "elapsed_seconds": 52.95,
           "map": "base"
         }
       ]
     },
     "supported-bop_tectonic": {
-      "resources": "neoforge-preview-3-234d6f5f2ec5367eb1f5fea22d60ab868be6f2fd7c51fabde6434923c835f339",
+      "resources": "neoforge-preview-3-c9809143e7aca766d72c40a3b8e8f53c1b068be41adff2a6ab903b3abe7b1307",
       "status": "verified",
       "cases": [
         {
           "profile": "supported-bop_tectonic",
-          "resources": "neoforge-preview-3-234d6f5f2ec5367eb1f5fea22d60ab868be6f2fd7c51fabde6434923c835f339",
+          "resources": "neoforge-preview-3-c9809143e7aca766d72c40a3b8e8f53c1b068be41adff2a6ab903b3abe7b1307",
           "seed": "2",
           "generation_version": 5,
           "world_preset": "minecraft:normal",
@@ -246,7 +256,8 @@
             "biomesoplenty",
             "minecraft"
           ],
-          "elapsed_seconds": 59.11,
+          "reopened_world": false,
+          "elapsed_seconds": 58.58,
           "map": "base"
         }
       ]

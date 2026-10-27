@@ -31,8 +31,9 @@ public final class NeoForgePreviewBootstrap {
         try{var digest=java.security.MessageDigest.getInstance("SHA-256");digest.update(code.getBytes(java.nio.charset.StandardCharsets.UTF_8));hashClass(digest,factory);
             for(String directory:List.of("worldgen","dimension","dimension_type","tags")){
                 var stacks=new TreeMap<>(resources.listResourceStacks(directory,id->id.getPath().endsWith(".json")));
-                for(var entry:stacks.entrySet()){digest.update(entry.getKey().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                    for(var resource:entry.getValue()){digest.update(resource.sourcePackId().getBytes(java.nio.charset.StandardCharsets.UTF_8));try(var input=resource.open()){digest.update(input.readAllBytes());}}
+                for(var entry:stacks.entrySet()){// Stack order and bytes matter; Architectury-generated pack labels change on every launch.
+                    var stack=new ArrayList<byte[]>();for(var resource:entry.getValue())try(var input=resource.open()){stack.add(input.readAllBytes());}
+                    ResourceFingerprint.updateStack(digest,entry.getKey().toString(),stack);
                 }
             }return "neoforge-preview-3-"+HexFormat.of().formatHex(digest.digest());
         }catch(Exception error){throw new IllegalStateException("Could not fingerprint loaded worldgen resources",error);}
@@ -47,7 +48,7 @@ public final class NeoForgePreviewBootstrap {
                 access.registryOrThrow(Registries.WORLD_PRESET).entrySet().forEach(entry->entry.getValue().overworld().ifPresent(stem->{if(stem.generator() instanceof NoiseBasedChunkGenerator)presets.put(entry.getKey().location().toString(),stem);}));
                 if(presets.isEmpty())throw new IllegalStateException("No supported noise-based Overworld presets in this modpack");
                 var digest=java.security.MessageDigest.getInstance("SHA-256");digest.update(colors.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));digest.update(System.getProperty("wge.preview.fingerprint").getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                for(var type:List.of(GenerationContext.class,IslandBiomeRules.class,BiomeClimateCatalog.class,NaturalCoast.class,IslandMask.class,IslandNoiseComposition.class,IslandBiomeSource.class,IslandContinentsFunction.class,IslandDepthFunction.class,IslandCoastFunction.class,CoastField.class,org.wodichka.worldgen_editor.config.IslandConfigLoader.class,org.wodichka.worldgen_editor.config.IslandTemperature.class,PreviewWorld.class,ColumnSurfaceSampler.class,PreviewServer.class,NeoForgePreviewBootstrap.class)){
+                for(var type:List.of(GenerationContext.class,IslandBiomeRules.class,BiomeClimateCatalog.class,NaturalCoast.class,IslandMask.class,IslandNoiseComposition.class,IslandBiomeSource.class,IslandContinentsFunction.class,IslandDepthFunction.class,IslandCoastFunction.class,CoastField.class,org.wodichka.worldgen_editor.config.IslandConfigLoader.class,org.wodichka.worldgen_editor.config.IslandTemperature.class,PreviewWorld.class,ColumnSurfaceSampler.class,ResourceFingerprint.class,PreviewServer.class,NeoForgePreviewBootstrap.class)){
                     hashClass(digest,type);
                 }
                 String fingerprint="neoforge-preview-3-"+HexFormat.of().formatHex(digest.digest());

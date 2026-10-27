@@ -12,6 +12,7 @@ public final class GenerationContextTest {
         ClimateSelectionTest.run(biomes);
         ClimateSelectionTest.nativeIsolation();
         ProfileImportTest.run();
+        ResourceFingerprintTest.run();
         OutlineContextTest.run(biomes);
         CoastTransitionTest.run(biomes);
         CoastContextTest.run(biomes);
