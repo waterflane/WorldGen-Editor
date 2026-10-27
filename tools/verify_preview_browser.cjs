@@ -27,7 +27,7 @@ const output=name=>path.resolve(__dirname,'../build',name);
   assert.equal(await page.evaluate(()=>WgePreview.snapshot().document),previous);
   await page.locator('#mapTemperature').selectOption('minecraft:mushroom');await page.locator('#mapTemperature').press('Enter');
   await page.waitForFunction(()=>JSON.parse(WgePreview.snapshot().document).name==='Unavailable category');
-  await page.locator('#generationProfile').selectOption('supported-combined');
+  await page.locator('#projectInput').setInputFiles({name:'modded-preview-project.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'wge-map-project',version:1,seed:'2',config:{generation_version:5,enabled:true,name:'Modded project',temperature:'minecraft:mushroom',entries:[{x:0,z:0,radius:512}]},editor:{profile:{id:'supported-combined',worldPreset:'minecraft:normal'}}}))});
   await page.waitForFunction(()=>window.WgeProfiles.selection.id==='supported-combined',{},{timeout:90000});
   const groups=await page.locator('#mapTemperature optgroup').evaluateAll(groups=>groups.map(g=>g.label));assert.ok(groups.includes('Terralith'));assert.ok(groups.some(g=>g.includes('Plenty')));
   await page.locator('#mapTemperature').selectOption('biomesoplenty:mushroom');
