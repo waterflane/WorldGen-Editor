@@ -13,14 +13,18 @@ import java.util.*;
 public final class BiomeClimateCatalog {
     private final List<Holder<Biome>> surface;
     private final Set<Holder<Biome>> surfaceSet;
-    public BiomeClimateCatalog(Registry<Biome> registry) {
-        surface=registry.holders().filter(BiomeClimateCatalog::surface).sorted(Comparator.comparing(BiomeClimateCatalog::id)).map(b->(Holder<Biome>)b).toList();
+    public BiomeClimateCatalog(Registry<Biome> registry) {this(registry,Set.of());}
+    public BiomeClimateCatalog(Registry<Biome> registry,Set<Holder<Biome>> overworld) {
+        surface=registry.holders().filter(b->(tagged(b,"minecraft:is_overworld")||overworld.contains(b))&&eligible(b)).sorted(Comparator.comparing(BiomeClimateCatalog::id)).map(b->(Holder<Biome>)b).toList();
         surfaceSet=Set.copyOf(surface);
     }
     public static String id(Holder<Biome> biome){return biome.unwrapKey().orElseThrow().location().toString();}
     public static boolean tagged(Holder<Biome> biome,String id){return biome.is(TagKey.create(Registries.BIOME,ResourceLocation.parse(id)));}
     public static boolean surface(Holder<Biome> b){
-        return tagged(b,"minecraft:is_overworld") && !tagged(b,"minecraft:is_ocean") && !tagged(b,"c:is_ocean") && !tagged(b,"c:is_river")
+        return tagged(b,"minecraft:is_overworld")&&eligible(b);
+    }
+    private static boolean eligible(Holder<Biome> b){
+        return !tagged(b,"minecraft:is_nether")&&!tagged(b,"minecraft:is_end")&&!tagged(b,"minecraft:is_ocean") && !tagged(b,"c:is_ocean") && !tagged(b,"c:is_river")
                 && !tagged(b,"minecraft:is_river") && !tagged(b,"minecraft:is_beach") && !tagged(b,"c:is_beach")
                 && !tagged(b,"c:is_underground") && !tagged(b,"c:is_cave") && !tagged(b,"terralith:caves");
     }

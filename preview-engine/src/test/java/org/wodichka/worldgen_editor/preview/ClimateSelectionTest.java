@@ -7,6 +7,20 @@ import org.wodichka.worldgen_editor.config.*;
 import org.wodichka.worldgen_editor.world.*;
 
 final class ClimateSelectionTest {
+    static void nativeIsolation()throws Exception {
+        var access=PreviewWorld.bootstrap();var json=JsonParser.parseString("{\"enabled\":true,\"entries\":[{\"x\":0,\"z\":0,\"radius\":500}]}");
+        var vanilla=new PreviewWorld(json,2,5);var delegate=((IslandBiomeSource)vanilla.generator().getBiomeSource()).delegate();
+        var settings=access.registryOrThrow(net.minecraft.core.registries.Registries.NOISE_SETTINGS).get(net.minecraft.resources.ResourceLocation.withDefaultNamespace("overworld"));
+        var first=new PreviewWorld(json,2,5,access,delegate,settings,null);var second=new PreviewWorld(json,3,5,access,delegate,settings,null);
+        var method=MultiNoiseBiomeSource.class.getDeclaredMethod("parameters");method.setAccessible(true);
+        Object original=method.invoke(delegate),a=method.invoke(((IslandBiomeSource)first.generator().getBiomeSource()).delegate()),b=method.invoke(((IslandBiomeSource)second.generator().getBiomeSource()).delegate());
+        GenerationContextTest.check(original!=a&&original!=b&&a!=b,"Session climate tables are shared through the preset registry");
+        for(int x:new int[]{-257,0,99}){
+            GenerationContextTest.check(first.surfaceY(x,255)==vanilla.surfaceY(x,255),"Isolated parameters changed height");
+            GenerationContextTest.check(first.biomeId(x,0,255).equals(vanilla.biomeId(x,0,255)),"Isolated parameters changed biome");
+        }
+        System.out.println("Native climate parameter lists are independent per session and retain vanilla results");
+    }
     static void run(Registry<Biome> biomes)throws Exception {
         var json=JsonParser.parseString("{\"enabled\":true,\"generation_version\":5,\"temperature\":\"minecraft:mushroom\",\"entries\":[{\"x\":0,\"z\":0,\"radius\":500}]}").getAsJsonObject();
         var config=PresetDocument.parse(json).config();

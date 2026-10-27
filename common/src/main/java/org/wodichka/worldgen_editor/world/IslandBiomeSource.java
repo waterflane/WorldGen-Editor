@@ -64,7 +64,7 @@ public final class IslandBiomeSource extends BiomeSource {
     public BiomeSource delegate() { return delegate; }
     public int generationVersion() { return generationVersion; }
     public GenerationBinding binding() { return binding; }
-    public void bind(GenerationBinding value) { binding.attach(value); if(binding.get()!=null)binding.get().biomeRules().bindDelegate(delegate.possibleBiomes()); }
+    public void bind(GenerationBinding value) { binding.attach(value); if(binding.get()!=null)binding.get().biomeRules().bindDelegate(delegate); }
     public void seaLevel(int value){seaLevel=value;}
 
     /** Returns a biome only if this column's WGE rule is independent of Y and the delegate. */
@@ -124,7 +124,7 @@ public final class IslandBiomeSource extends BiomeSource {
             var selected=context.biomeRules().naturalCoastBiome(sample.coast(),delegateBiome,blockX,blockZ,coastClimateSource(sample),surface,seaLevel);
             if(selected!=null)return selected;
             var source=sample.landSource()!=null?sample.landSource():sample.archipelagoSource();
-            return context.biomeRules().landBiome(Math.max(IslandTerrainHooks.LAND_MASK,mask.geometry(blockX,blockZ)),source,delegateBiome,blockX,blockZ);
+            return context.biomeRules().landBiome(Math.max(IslandTerrainHooks.LAND_MASK,mask.geometry(blockX,blockZ)),source,delegateBiome,blockX,blockZ,context.generationVersion()>=5?sampler.sample(quartX,quartY,quartZ):null);
         }
         if(sample.coast()!=null) {
             var coast=context.biomeRules().customCoastBiome(sample.coast(),delegateBiome,blockX,blockZ,coastClimateSource(sample));
@@ -147,6 +147,6 @@ public final class IslandBiomeSource extends BiomeSource {
         }
 
         IslandMask.SourceInfo source = sample.landSource() != null ? sample.landSource() : sample.archipelagoSource();
-        return context.biomeRules().landBiome(sample.value(), source, delegateBiome, blockX, blockZ);
+        return context.biomeRules().landBiome(sample.value(), source, delegateBiome, blockX, blockZ,context.generationVersion()>=5?sampler.sample(quartX,quartY,quartZ):null);
     }
 }

@@ -13,6 +13,7 @@ public final class WorldSnapshotStore {
             GenerationContext.validateVersion(generationVersion);
             if(!IslandConfigLoader.isSafePresetName(preset))throw new IllegalArgumentException("Invalid world preset filename");
             if(preset==null||preset.isBlank()||config==null)throw new IllegalArgumentException("Incomplete world snapshot");
+            if(config.hasModernClimate()&&generationVersion<5)throw new IllegalArgumentException("Extended temperatures require generation_version 5");
             if(config.hasCoasts()&&generationVersion<4)throw new IllegalArgumentException("Custom coasts require generation_version 4");
             if(config.paintedMap()!=null&&generationVersion<3)throw new IllegalArgumentException("Painted maps require generation_version 3");
             if(config.hasOutlines()&&generationVersion<3)throw new IllegalArgumentException("Island outlines require generation_version 3");

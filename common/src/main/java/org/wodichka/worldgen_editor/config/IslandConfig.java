@@ -19,6 +19,7 @@ public record IslandConfig(boolean enabled, String outerOcean, List<IslandEntry>
         if (outerOcean == null || outerOcean.isBlank()) {
             outerOcean = DEFAULT_OUTER_OCEAN;
         }
+        temperature=temperature==null?IslandTemperature.STANDARD:temperature;
         entries = List.copyOf(entries);
         name = name == null ? "" : name;
         if (oceanTemperature != null && oceanTemperature != IslandTemperature.COLD && oceanTemperature != IslandTemperature.TEMPERATE && oceanTemperature != IslandTemperature.WARM) {

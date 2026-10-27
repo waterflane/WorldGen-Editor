@@ -49,7 +49,10 @@ public final class IslandBiomeRules {
     private final List<TagKey<Biome>> SNOWY_TAGS = List.of(tag("c:is_snowy"), tag("forge:is_snowy"), tag("c:snowy"), tag("forge:snowy"));
     private final List<TagKey<Biome>> TEMPERATE_TAGS = List.of(tag("c:is_temperate"), tag("forge:is_temperate"), tag("c:temperate"), tag("forge:temperate"));
 
-    private final BiomeClimateCatalog catalog;
+    private BiomeClimateCatalog catalog;
+    private net.minecraft.world.level.biome.Climate.ParameterList<Holder<Biome>> nativeClimate;
+    private record Choice(IslandTemperature temperature,List<String> excluded){}
+    private final java.util.Map<Choice,java.util.Optional<net.minecraft.world.level.biome.Climate.ParameterList<Holder<Biome>>>> nativeChoices=java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(8,.75f,true){protected boolean removeEldestEntry(java.util.Map.Entry<Choice,java.util.Optional<net.minecraft.world.level.biome.Climate.ParameterList<Holder<Biome>>>> entry){return size()>8;}});
     private java.util.Set<Holder<Biome>> delegateCandidates;
     private final java.util.Map<IslandTemperature,List<Holder<Biome>>> climateCandidates=new java.util.concurrent.ConcurrentHashMap<>();
     private final Registry<Biome> biomeRegistry;
@@ -247,7 +250,8 @@ public final class IslandBiomeRules {
         return landBiome(1.0D, source, delegate, blockX, blockZ);
     }
 
-    public Holder<Biome> landBiome(double islandMask, IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ) {
+    public Holder<Biome> landBiome(double islandMask,IslandMask.SourceInfo source,Holder<Biome> delegate,int blockX,int blockZ){return landBiome(islandMask,source,delegate,blockX,blockZ,null);}
+    public Holder<Biome> landBiome(double islandMask, IslandMask.SourceInfo source, Holder<Biome> delegate, int blockX, int blockZ,net.minecraft.world.level.biome.Climate.TargetPoint target) {
         if (source == null && generationVersion<5) {
             Holder<Biome> coast = replaceOceanDelegateOnLand(islandMask, delegate);
             if (coast != null) {
@@ -267,7 +271,7 @@ public final class IslandBiomeRules {
         if (generationVersion >= 2 && isUnderground(delegate) && !isExcluded(delegate, source)) {
             return delegate;
         }
-        if(generationVersion>=5)return modernLandBiome(source,delegate,blockX,blockZ);
+        if(generationVersion>=5)return modernLandBiome(source,delegate,blockX,blockZ,target);
         Holder<Biome> coast = configured == null || generationVersion < 2
                 ? replaceOceanDelegateOnLand(islandMask, delegate) : null;
         if (coast != null && !isExcluded(coast, source)) {
@@ -301,21 +305,42 @@ public final class IslandBiomeRules {
         };
     }
 
-    public void bindDelegate(java.util.Set<Holder<Biome>> candidates){
+    @SuppressWarnings("unchecked")
+    public void bindDelegate(net.minecraft.world.level.biome.BiomeSource source){
+        var candidates=source.possibleBiomes();
         if(generationVersion<5)return;
-        delegateCandidates=java.util.Set.copyOf(candidates);climateCandidates.clear();
+        delegateCandidates=java.util.Set.copyOf(candidates);catalog=new BiomeClimateCatalog(biomeRegistry,delegateCandidates);climateCandidates.clear();nativeChoices.clear();
+        if(source instanceof net.minecraft.world.level.biome.MultiNoiseBiomeSource)try{
+            var method=net.minecraft.world.level.biome.MultiNoiseBiomeSource.class.getDeclaredMethod("parameters");method.setAccessible(true);
+            nativeClimate=(net.minecraft.world.level.biome.Climate.ParameterList<Holder<Biome>>)method.invoke(source);
+        }catch(ReflectiveOperationException error){throw new IllegalStateException("Unsupported Minecraft climate parameter source",error);}
+        validateModernSelection(null);
+        for(var e:config.entries())if(e.type()!=org.wodichka.worldgen_editor.config.IslandEntryType.OCEAN)
+            validateModernSelection(new IslandMask.SourceInfo(e.name(),e.type(),null,0L,e.excludedBiomes(),e.temperature(),e.biomePatchSize()));
     }
     private IslandTemperature landSelection(IslandMask.SourceInfo source){
         var choice=source==null?IslandTemperature.STANDARD:source.temperature();
         return choice==IslandTemperature.STANDARD?config.temperature():choice;
     }
-    private Holder<Biome> modernLandBiome(IslandMask.SourceInfo source,Holder<Biome> delegate,int x,int z){
+    private List<Holder<Biome>> allowedModern(IslandMask.SourceInfo source){
+        var choice=landSelection(source);return climateCandidates.computeIfAbsent(choice,c->catalog.candidates(c).stream().filter(b->delegateCandidates==null||delegateCandidates.contains(b)).toList()).stream().filter(b->!isExcluded(b,source)).toList();
+    }
+    private void validateModernSelection(IslandMask.SourceInfo source){
+        if(allowedModern(source).isEmpty())throw new IllegalArgumentException("No allowed surface biomes for temperature "+landSelection(source).id());
+    }
+    private Holder<Biome> modernLandBiome(IslandMask.SourceInfo source,Holder<Biome> delegate,int x,int z){return modernLandBiome(source,delegate,x,z,null);}
+    private Holder<Biome> modernLandBiome(IslandMask.SourceInfo source,Holder<Biome> delegate,int x,int z,net.minecraft.world.level.biome.Climate.TargetPoint target){
         var choice=landSelection(source);
         if(delegate!=null&&!isExcluded(delegate,source)&&catalog.matches(delegate,choice))return delegate;
-        var candidates=climateCandidates.computeIfAbsent(choice,c->catalog.candidates(c).stream()
-                .filter(b->c.special()||delegateCandidates==null||delegateCandidates.contains(b)).toList());
-        var allowed=candidates.stream().filter(b->!isExcluded(b,source)).toList();
+        var allowed=allowedModern(source);
         if(allowed.isEmpty())throw new IllegalStateException("No allowed surface biome for "+choice.id());
+        if(target!=null&&nativeClimate!=null){
+            var key=new Choice(choice,source==null?List.of():source.excludedBiomes());
+            var filtered=nativeChoices.computeIfAbsent(key,k->{
+                var present=new java.util.HashSet<Holder<Biome>>();var points=nativeClimate.values().stream().filter(p->allowed.contains(p.getSecond())).peek(p->present.add(p.getSecond())).toList();
+                return points.isEmpty()||!present.containsAll(allowed)?java.util.Optional.empty():java.util.Optional.of(new net.minecraft.world.level.biome.Climate.ParameterList<>(points));
+            });if(filtered.isPresent())return filtered.get().findValue(target);
+        }
         // Preserve the delegate's climate affinity; stable IDs break ties reproducibly.
         if(delegate!=null&&!isOceanBiome(delegate)){
             double best=Double.POSITIVE_INFINITY;Holder<Biome> result=null;

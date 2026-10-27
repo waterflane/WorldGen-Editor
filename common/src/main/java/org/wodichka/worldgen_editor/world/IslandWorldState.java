@@ -32,7 +32,8 @@ public final class IslandWorldState {
     }
 
     /** Called before ServerLevel/ChunkMap constructors can cache possible biomes or noises. */
-    public static void prepareForServer(MinecraftServer server) {
+    public static void prepareForServer(MinecraftServer server) {prepareForServer(server,()->{});}
+    public static void prepareForServer(MinecraftServer server,Runnable prepareDelegate) {
         clear();
         var stem = server.registryAccess().registryOrThrow(Registries.LEVEL_STEM).get(LevelStem.OVERWORLD);
         if (stem == null || !(stem.generator() instanceof NoiseBasedChunkGenerator generator)
@@ -45,6 +46,7 @@ public final class IslandWorldState {
             Registry<Biome> biomes = server.registryAccess().registryOrThrow(Registries.BIOME);
             binding = new GenerationBinding();
             binding.set(new GenerationContext(server.getWorldData().worldGenOptions().seed(), effectiveConfig(), version, biomes));
+            prepareDelegate.run();
             source.bind(binding);
             source.seaLevel(generator.getSeaLevel());
             int[] depthNodes={0};

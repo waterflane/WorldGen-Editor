@@ -218,6 +218,11 @@ public final class IslandConfigLoader {
         String displayName=optionalString(object,"name","","root").trim();
         if((object.has("name")&&displayName.isBlank())||displayName.length()>120||displayName.chars().anyMatch(Character::isISOControl))throw new IslandConfigException("root.name must contain 1–120 characters without control characters");
         boolean enabled = optionalBoolean(object, "enabled", false, "root");
+        if(object.has("temperature")){
+            var value=object.get("temperature");
+            if(!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isString())throw new IslandConfigException("root.temperature must be a climate ID string");
+            if(!parseTemperature(value.getAsString(),"root").id().equals(value.getAsString()))throw new IslandConfigException("root.temperature must use a canonical climate ID");
+        }
         IslandTemperature oceanTemperature = null;
         if (object.has("ocean_temperature")) {
             String value = optionalString(object, "ocean_temperature", "", "root");
