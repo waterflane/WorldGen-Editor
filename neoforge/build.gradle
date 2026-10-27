@@ -175,10 +175,44 @@ if (project.hasProperty('compatProfile')) {
     loom.runs.verification.property 'wge.compatibilityVerification','true'
     loom.runs.verification.property 'wge.compatProfile',profile
     loom.runs.verification.runDir "build/compatibility-runs/$profile-v3"
+    if(project.hasProperty('moddedPreviewUrl')){
+        def climate=project.findProperty('compatClimate')?.toString() ?: 'standard'
+        def map=project.findProperty('compatMap')?.toString() ?: 'base'
+        def suffix=climate.replace(':','-')+'-'+map+'-'+(project.findProperty('compatRun')?.toString() ?: 'default')
+        if(!(suffix ==~ /[a-zA-Z0-9_-]+/))throw new GradleException('Invalid compatibility run name')
+        loom.runs.verification.runDir "build/modded-preview-verification/$profile-$suffix"
+        loom.runs.verification.property 'wge.moddedPreviewUrl',project.property('moddedPreviewUrl').toString()
+        if(project.hasProperty('moddedReopen'))loom.runs.verification.property 'wge.moddedReopen','true'
+        loom.runs.verification.property 'wge.verificationSeed',project.findProperty('compatSeed')?.toString() ?: '2'
+        loom.runs.verification.programArg '--mixin.config'
+        loom.runs.verification.programArg 'wge-verification.mixins.json'
+        tasks.named('processVerificationResources').configure {
+            inputs.property 'moddedPreview',true
+            inputs.property 'moddedPreviewRevision',2
+            filesMatching('data/minecraft/worldgen/world_preset/flat.json') {
+                filter { line -> line.replace('"generation_version": 3','"generation_version": 5') }
+            }
+        }
+        tasks.named('runVerification').configure {
+            doFirst {
+                def dir=file("build/modded-preview-verification/$profile-$suffix/config/worldgen_editor/presets");dir.mkdirs()
+                if(project.hasProperty('moddedReopen')) {
+                    if(!file("build/modded-preview-verification/$profile-$suffix/world/worldgen_editor/worldgen_editor.json").isFile())throw new GradleException('No pinned modded preview world to reopen')
+                    return
+                }
+                def config=[enabled:true,entries:[[name:'Parity island',x:0,z:0,radius:6000,temperature:'standard']]]
+                if(map=='coast')config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/natural-coast-repro.json')).config
+                if(climate!='standard')config.temperature=climate
+                config.generation_version=5
+                new File(dir,'default.json').text=groovy.json.JsonOutput.toJson(config)
+            }
+        }
+    }
+
     tasks.named('processVerificationResources').configure {
         inputs.property 'compatibilityProfile',profile
         filesMatching('data/minecraft/worldgen/world_preset/flat.json') {
-            filter { line -> line.replace('"generation_version": 2','"generation_version": 3').replace('"worldgen_editor:island_overworld"','"minecraft:overworld"') }
+            filter { line -> line.replace('"generation_version": 2',project.hasProperty('moddedPreviewUrl')?'"generation_version": 5':'"generation_version": 3').replace('"worldgen_editor:island_overworld"','"minecraft:overworld"') }
         }
     }
     tasks.named('runVerification').configure {
@@ -189,6 +223,74 @@ if (project.hasProperty('compatProfile')) {
             if(profile=='painted')config=new groovy.json.JsonSlurper().parse(rootProject.file('common/src/test/resources/painted-islands.json'))
             if(profile=='disabled')config.enabled=false
             new File(dir,'default.json').text=groovy.json.JsonOutput.toJson(config)
+        }
+    }
+}
+
+// Modpack preview code is separate from the release jar and the game-test resources.
+sourceSets {
+    previewRuntime {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath + project(':preview-engine').sourceSets.main.output
+        runtimeClasspath += output + sourceSets.main.runtimeClasspath + project(':preview-engine').sourceSets.main.output
+    }
+}
+tasks.named('compilePreviewRuntimeJava').configure { dependsOn ':preview-engine:classes', classes }
+if(project.hasProperty('previewProfileDir')) {
+    def snapshot=file(project.property('previewProfileDir').toString())
+    if(!snapshot.isDirectory())throw new GradleException('Missing preview profile snapshot')
+    dependencies { modRuntimeOnly fileTree(new File(snapshot,'mods')) { include '*.jar' }; modRuntimeOnly fileTree(new File(snapshot,'runtime-libs')) { include '*.jar' } }
+    loom.runs {
+        moddedPreview {
+            server()
+            source sourceSets.previewRuntime
+            runDir new File(snapshot,'run').absolutePath
+            property 'wge.previewNative','true'
+            property 'neoforge.enableGameTest','true'
+            property 'neoforge.gameTestServer','true'
+            environmentVariable 'MOD_CLASSES',(sourceSets.main.output + sourceSets.previewRuntime.output + project(':preview-engine').sourceSets.main.output.classesDirs).files.collect { 'main%%'+it.absolutePath }.join(File.pathSeparator)
+        }
+    }
+    tasks.named('runModdedPreview').configure {
+        dependsOn previewRuntimeClasses
+        doFirst {
+            if(project.hasProperty('prepareModdedPreview')) {
+                def output=new File(snapshot,'runtime');output.mkdirs()
+                def command=[new File(System.getProperty('java.home'),'bin/java.exe').absolutePath]
+                def internalJvm=net.fabricmc.loom.task.AbstractRunTask.getDeclaredMethod('getInternalJvmArgs');internalJvm.accessible=true
+                command.addAll(internalJvm.invoke(delegate).get())
+                command.addAll(allJvmArgs.findAll { !it.startsWith('-Xmx') })
+                jvmArgumentProviders.each { command.addAll(it.asArguments().findAll { !it.startsWith('@') }) }
+                def envMethod=net.fabricmc.loom.task.AbstractRunTask.getDeclaredMethod('getInternalEnvironmentVars');envMethod.accessible=true
+                environment(envMethod.invoke(delegate).get())
+                def classesMethod=net.fabricmc.loom.task.AbstractRunTask.getDeclaredMethod('configureForgeModClasses',org.gradle.process.ProcessForkOptions);classesMethod.accessible=true
+                classesMethod.invoke(delegate,delegate)
+                command.addAll(['-cp',classpath.asPath,mainClass.get()]);command.addAll(args);argumentProviders.each { command.addAll(it.asArguments()) }
+                // Keep launcher metadata immutable across preparation of other profiles.
+                ['launch.cfg','forge_minecraft_classpath.txt','remapClasspath.txt'].each { name ->
+                    def original=file(".gradle/loom-cache/$name")
+                    if(original.isFile())new File(output,name).bytes=original.bytes
+                }
+                def launch=new File(output,'launch.cfg')
+                if(launch.isFile()) {
+                    def text=launch.text
+                    ['forge_minecraft_classpath.txt','remapClasspath.txt'].each { name->text=text.replace(file(".gradle/loom-cache/$name").absolutePath,new File(output,name).absolutePath) }
+                    launch.text=text
+                }
+                ['.main_class','.transforms','.properties'].each { name ->
+                    def original=file(".gradle/architectury/$name");if(original.isFile())new File(output,name).bytes=original.bytes
+                }
+                command=command.collect { arg ->
+                    def updated=arg
+                    ['launch.cfg','forge_minecraft_classpath.txt','remapClasspath.txt'].each { name ->
+                        def original=file(".gradle/loom-cache/$name").absolutePath,destination=new File(output,name).absolutePath
+                        updated=updated.replace(original,destination).replace(original.replace(' ','@@0020'),destination.replace(' ','@@0020'))
+                    }
+                    ['.main_class','.transforms','.properties'].each { name -> updated=updated.replace(file(".gradle/architectury/$name").absolutePath,new File(output,name).absolutePath) }
+                    updated
+                }
+                new File(output,'launch.json').text=groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([command:command,main_class:mainClass.get(),environment:environment.findAll { key,value->key in ['MOD_CLASSES','MOD_RESOURCES'] }]))
+                throw new org.gradle.api.tasks.StopExecutionException('Preview runtime prepared')
+            }
         }
     }
 }

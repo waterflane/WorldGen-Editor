@@ -10,6 +10,8 @@ public final class GenerationContextTest {
         var registries=PreviewWorld.bootstrap();var biomes=registries.registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
         OceanTemperatureTest.run(biomes);
         ClimateSelectionTest.run(biomes);
+        ClimateSelectionTest.nativeIsolation();
+        ProfileImportTest.run();
         OutlineContextTest.run(biomes);
         CoastTransitionTest.run(biomes);
         CoastContextTest.run(biomes);

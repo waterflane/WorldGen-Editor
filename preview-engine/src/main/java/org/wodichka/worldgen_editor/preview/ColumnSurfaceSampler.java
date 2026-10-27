@@ -1,4 +1,6 @@
-package net.minecraft.world.level.levelgen;
+package org.wodichka.worldgen_editor.preview;
+
+import net.minecraft.world.level.levelgen.*;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.QuartPos;
@@ -14,10 +16,10 @@ import java.util.Map;
 
 /**
  * Standalone preview: reuse a compiled density graph and evaluate only queried columns.
- * This package grants access to Minecraft 1.21.1's marker records without reflection or runtime patches.
+ * Kept outside Minecraft packages so NeoForge can load it without split-package modules.
  */
 public final class ColumnSurfaceSampler extends NoiseChunk {
-    private static final DensityFunctions.BeardifierOrMarker NO_STRUCTURES=DensityFunctions.BeardifierMarker.INSTANCE;
+    private static final DensityFunctions.BeardifierOrMarker NO_STRUCTURES=(DensityFunctions.BeardifierOrMarker)DensityFunctions.BeardifierOrMarker.CODEC.codec().codec().parse(com.mojang.serialization.JsonOps.INSTANCE,new com.google.gson.JsonObject()).getOrThrow();
     private final RandomState random;
     private final NoiseGeneratorSettings settings;
     private final DensityFunction density,preliminary;
@@ -35,7 +37,7 @@ public final class ColumnSurfaceSampler extends NoiseChunk {
         this.random=random;this.settings=settings;this.fluids=fluidPicker(settings);
         var compiled=new HashMap<DensityFunction,DensityFunction>();
         DensityFunction.Visitor visitor=function->compiled.computeIfAbsent(function,key->{
-            if(key instanceof DensityFunctions.Marker marker)return new CachedMarker(marker,settings.noiseSettings());
+            if(Markers.TYPE.isInstance(key))return new CachedMarker(key,settings.noiseSettings());
             if(key instanceof DensityFunctions.HolderHolder holder)return holder.function().value();
             return key;
         });
@@ -103,16 +105,23 @@ public final class ColumnSurfaceSampler extends NoiseChunk {
         }
     }
 
+    private static final class Markers {
+        static final Class<?> TYPE;
+        static final java.lang.reflect.Method WRAPPED,KIND;
+        static {try{TYPE=Class.forName("net.minecraft.world.level.levelgen.DensityFunctions$Marker");WRAPPED=TYPE.getDeclaredMethod("wrapped");KIND=TYPE.getDeclaredMethod("type");WRAPPED.setAccessible(true);KIND.setAccessible(true);}catch(ReflectiveOperationException error){throw new ExceptionInInitializerError(error);}}
+        static Object call(java.lang.reflect.Method method,DensityFunction function){try{return method.invoke(function);}catch(ReflectiveOperationException error){throw new IllegalStateException("Unsupported Minecraft density markers",error);}}
+    }
     private static final class CachedMarker implements DensityFunction {
-        private final DensityFunctions.Marker original;
+        private final DensityFunction original;
+        private final String type;
         private final DensityFunction input;
         private final int width,height;
         private final long[] keys=new long[64];
         private final double[] values=new double[64];
         private final boolean[] valid=new boolean[64];
 
-        CachedMarker(DensityFunctions.Marker marker,NoiseSettings noise){
-            original=marker;input=marker.wrapped();width=noise.getCellWidth();height=noise.getCellHeight();
+        CachedMarker(DensityFunction marker,NoiseSettings noise){
+            original=marker;input=(DensityFunction)Markers.call(Markers.WRAPPED,marker);type=((Enum<?>)Markers.call(Markers.KIND,marker)).name();width=noise.getCellWidth();height=noise.getCellHeight();
         }
         private double cached(int x,int y,int z){
             long key=BlockPos.asLong(x,y,z);
@@ -123,12 +132,12 @@ public final class ColumnSurfaceSampler extends NoiseChunk {
         }
         @Override public double compute(FunctionContext point){
             int x=point.blockX(),y=point.blockY(),z=point.blockZ();
-            return switch(original.type()){
-                case FlatCache -> cached(QuartPos.toBlock(QuartPos.fromBlock(x)),0,QuartPos.toBlock(QuartPos.fromBlock(z)));
-                case Cache2D -> cached(x,0,z);
-                case CacheOnce -> cached(x,y,z);
-                case CacheAllInCell -> input.compute(point);
-                case Interpolated -> {
+            return switch(type){
+                case "FlatCache" -> cached(QuartPos.toBlock(QuartPos.fromBlock(x)),0,QuartPos.toBlock(QuartPos.fromBlock(z)));
+                case "Cache2D" -> cached(x,0,z);
+                case "CacheOnce" -> cached(x,y,z);
+                case "CacheAllInCell" -> input.compute(point);
+                case "Interpolated" -> {
                     int bx=Math.floorDiv(x,width)*width,by=Math.floorDiv(y,height)*height,bz=Math.floorDiv(z,width)*width;
                     double fx=(double)(x-bx)/width,fy=(double)(y-by)/height,fz=(double)(z-bz)/width;
                     // Grid-aligned overview samples lie on an interpolation edge. Zero
@@ -143,6 +152,7 @@ public final class ColumnSurfaceSampler extends NoiseChunk {
                         cached(bx,by,bz+width),cached(bx+width,by,bz+width),
                         cached(bx,by+height,bz+width),cached(bx+width,by+height,bz+width));
                 }
+                default -> throw new IllegalStateException("Unsupported density marker: "+type);
             };
         }
         @Override public void fillArray(double[] array,ContextProvider context){context.fillAllDirectly(array,this);}

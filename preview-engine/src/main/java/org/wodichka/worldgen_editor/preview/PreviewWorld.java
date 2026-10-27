@@ -76,21 +76,24 @@ public final class PreviewWorld {
                     try(var input=entry.getValue().open()){digest.update(input.readAllBytes());}
                 }
                 // A 0.4.0 beta can change code without changing datapacks. Never reuse its old tiles.
-                for(var type:List.of(NaturalCoast.class,IslandDepthFunction.class,CoastField.class,IslandMask.class,
+                for(var type:List.of(BiomeClimateCatalog.class,IslandTemperature.class,ColumnSurfaceSampler.class,NaturalCoast.class,IslandDepthFunction.class,CoastField.class,IslandMask.class,
                         IslandContinentsFunction.class,IslandCoastFunction.class,IslandNoiseComposition.class,IslandBiomeRules.class,IslandBiomeSource.class)){
                     try(var input=type.getResourceAsStream("/"+type.getName().replace('.','/')+".class")){
                         if(input==null)throw new IllegalStateException("Missing worldgen bytecode: "+type.getName());
                         digest.update(input.readAllBytes());
                     }
                 }
-                resourceFingerprint="minecraft-1.21.1-wge-4-ocean-temperature-1-outline-1-coast-3-"+HexFormat.of().formatHex(digest.digest());
+                resourceFingerprint="minecraft-1.21.1-wge-5-climate-1-ocean-temperature-1-outline-1-coast-3-"+HexFormat.of().formatHex(digest.digest());
             } catch(Exception error){throw new IllegalStateException("Could not fingerprint worldgen resources",error);}
         }
         return registries;
     }
 
     public PreviewWorld(JsonElement raw, long seed, int version) throws IslandConfigException {
-        RegistryAccess.Frozen access = bootstrap();
+        this(raw,seed,version,bootstrap(),null,null,null);
+    }
+    public PreviewWorld(JsonElement raw,long seed,int version,RegistryAccess access,BiomeSource nativeDelegate,NoiseGeneratorSettings nativeSettings,
+                        java.util.function.Consumer<NoiseBasedChunkGenerator> initializeDelegate)throws IslandConfigException {
         JsonObject input = raw.getAsJsonObject().deepCopy();
         if (!input.has("enabled")) input.addProperty("enabled", true);
         IslandConfig config = IslandConfigLoader.parse(input);
@@ -101,9 +104,24 @@ public final class PreviewWorld {
         biomeJson.addProperty("generation_version", version);
         biomeJson.add("delegate", JsonParser.parseString("{\"type\":\"minecraft:multi_noise\",\"preset\":\"minecraft:overworld\"}"));
         IslandBiomeSource source = (IslandBiomeSource) BiomeSource.CODEC.parse(ops, biomeJson).getOrThrow();
+        if(nativeDelegate!=null){
+            BiomeSource delegate;
+            if(nativeDelegate instanceof MultiNoiseBiomeSource){
+                if(nativeDelegate.getClass()!=MultiNoiseBiomeSource.class)throw new IllegalArgumentException("Custom multi-noise biome source needs a preview adapter");
+                // Preset codecs reuse the registry ParameterList. TerraBlender stores its first seed there.
+                // A direct list preserves every loaded climate point while owning fresh per-session TB state.
+                try{var method=MultiNoiseBiomeSource.class.getDeclaredMethod("parameters");method.setAccessible(true);
+                    @SuppressWarnings("unchecked") var parameters=(Climate.ParameterList<Holder<Biome>>)method.invoke(nativeDelegate);
+                    delegate=MultiNoiseBiomeSource.createFromList(new Climate.ParameterList<>(java.util.List.copyOf(parameters.values())));
+                }catch(ReflectiveOperationException error){throw new IllegalStateException("Could not isolate modded climate parameters",error);}
+            }else delegate=BiomeSource.CODEC.parse(ops,BiomeSource.CODEC.encodeStart(ops,nativeDelegate).getOrThrow()).getOrThrow();
+            source=IslandBiomeSource.forPreset(delegate,"preview",version,access.lookupOrThrow(Registries.BIOME));
+            if(initializeDelegate!=null)initializeDelegate.accept(new NoiseBasedChunkGenerator(delegate,Holder.direct(nativeSettings)));
+        }
         source.bind(binding);
         NoiseGeneratorSettings original = access.registryOrThrow(Registries.NOISE_SETTINGS)
                 .get(version>=3?ResourceLocation.withDefaultNamespace("overworld"):ResourceLocation.fromNamespaceAndPath("worldgen_editor", "island_overworld"));
+        if(nativeSettings!=null)original=nativeSettings;
         if(version>=3)original=IslandNoiseComposition.compose(original);
         source.seaLevel(original.seaLevel());
         NoiseRouter router = original.noiseRouter().mapAll(function -> {
@@ -118,10 +136,11 @@ public final class PreviewWorld {
                 original.isAquifersEnabled(), original.oreVeinsEnabled(), original.useLegacyRandomSource());
         generator = new NoiseBasedChunkGenerator(source, Holder.direct(settings));
         random = RandomState.create(settings, access.lookupOrThrow(Registries.NOISE), seed);
+        final IslandBiomeSource sessionSource=source;
         biomes = new BiomeManager((x,y,z) -> {
             long key=BlockPos.asLong(x,y,z);
             synchronized(noiseBiomeCache){var cached=noiseBiomeCache.get(key);if(cached!=null)return cached;}
-            var result=source.getNoiseBiome(x,y,z,random.sampler());
+            var result=sessionSource.getNoiseBiome(x,y,z,random.sampler());
             synchronized(noiseBiomeCache){noiseBiomeCache.put(key,result);}return result;
         }, BiomeManager.obfuscateSeed(seed));
         height = LevelHeightAccessor.create(settings.noiseSettings().minY(), settings.noiseSettings().height());

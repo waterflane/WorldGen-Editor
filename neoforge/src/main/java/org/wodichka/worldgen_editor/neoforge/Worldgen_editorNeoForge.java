@@ -32,6 +32,13 @@ public final class Worldgen_editorNeoForge {
                 catch (ClassNotFoundException error) { throw new IllegalStateException(error); }
             });
         }
+        if(Boolean.getBoolean("wge.previewNative")){
+            modEventBus.addListener((net.neoforged.neoforge.event.RegisterGameTestsEvent event)->{
+                try{event.register(Class.forName("org.wodichka.worldgen_editor.neoforge.PreviewRuntimeTest"));}catch(ClassNotFoundException error){throw new IllegalStateException(error);}
+            });
+            try{Class.forName("org.wodichka.worldgen_editor.neoforge.NeoForgePreviewBootstrap").getMethod("register").invoke(null);}
+            catch(ReflectiveOperationException error){throw new IllegalStateException("Missing prepared NeoForge preview runtime",error);}
+        }
         Worldgen_editor.init();
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         NeoForge.EVENT_BUS.addListener(this::serverStarting);
@@ -52,8 +59,7 @@ public final class Worldgen_editorNeoForge {
     }
 
     private void serverStarting(ServerAboutToStartEvent event) {
-        IslandWorldState.prepareForServer(event.getServer());
-        TerraBlenderCompatibility.initialize(event.getServer());
+        IslandWorldState.prepareForServer(event.getServer(),()->TerraBlenderCompatibility.initialize(event.getServer()));
     }
 
     private void serverStopped(ServerStoppedEvent event) {
