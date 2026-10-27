@@ -173,12 +173,46 @@ public final class ProfileManager implements AutoCloseable {
             if(Pattern.compile("(?m)^\\s*clientSideOnly\\s*=\\s*true\\s*(?:#.*)?$").matcher(toml).find())result.addProperty("client_only",true);
         }return result;
     }
-    private static String detectVersion(Path source)throws IOException {
-        for(String file:List.of("modrinth.index.json","manifest.json","mmc-pack.json")){
-            Path path=source.resolve(file);if(!Files.isRegularFile(path))continue;String text=Files.readString(path);
-            if(file.equals("modrinth.index.json")){var deps=JsonParser.parseString(text).getAsJsonObject().getAsJsonObject("dependencies");if(deps!=null){if(deps.has("minecraft")&&!deps.get("minecraft").getAsString().equals("1.21.1"))throw new IOException("Minecraft 1.21.1 is required");if(deps.has("neoforge"))return deps.get("neoforge").getAsString();}}
-            var match=Pattern.compile("(?:neoforge-|net\\.neoforged\\.neoforge[^}]*?\\\"version\\\"\\s*:\\s*\\\")([0-9]+\\.[0-9]+\\.[0-9]+)").matcher(text);if(match.find())return match.group(1);
-        }return "21.1.230";
+    static String detectVersion(Path source)throws IOException {
+        String detected=null;
+        for(String file:List.of("modrinth.index.json","manifest.json","mmc-pack.json","profile.json")){
+            Path path=source.resolve(file);if(!Files.isRegularFile(path))continue;
+            JsonObject data;
+            try{data=JsonParser.parseString(Files.readString(path)).getAsJsonObject();}catch(RuntimeException error){throw new IOException("Invalid instance metadata: "+file,error);}
+            String candidate=null,minecraft=null;
+            if(file.equals("modrinth.index.json")&&data.has("dependencies")){
+                var deps=data.getAsJsonObject("dependencies");minecraft=text(deps,"minecraft");candidate=text(deps,"neoforge");
+                if(candidate==null&&(deps.has("fabric-loader")||deps.has("forge")))throw new IOException("NeoForge instance required: "+file);
+            }else if(file.equals("manifest.json")&&data.has("minecraft")){
+                var game=data.getAsJsonObject("minecraft");minecraft=text(game,"version");
+                if(game.has("modLoaders"))for(var item:game.getAsJsonArray("modLoaders")){
+                    String id=text(item.getAsJsonObject(),"id");if(id!=null&&id.startsWith("neoforge-"))candidate=id.substring(9);
+                }
+                if(candidate==null&&game.has("modLoaders")&&!game.getAsJsonArray("modLoaders").isEmpty())throw new IOException("NeoForge instance required: "+file);
+            }else if(file.equals("mmc-pack.json")&&data.has("components")){
+                for(var item:data.getAsJsonArray("components")){var component=item.getAsJsonObject();String uid=text(component,"uid");
+                    if("net.minecraft".equals(uid))minecraft=text(component,"version");
+                    if("net.neoforged".equals(uid)||"net.neoforged.neoforge".equals(uid))candidate=text(component,"version");
+                    if("net.fabricmc.fabric-loader".equals(uid)||"net.minecraftforge".equals(uid))throw new IOException("NeoForge instance required: "+file);
+                }
+            }else if(file.equals("profile.json")){
+                var metadata=data.has("metadata")&&data.get("metadata").isJsonObject()?data.getAsJsonObject("metadata"):data;
+                minecraft=text(metadata,"game_version");String loader=text(metadata,"loader");
+                if(loader!=null&&!loader.equalsIgnoreCase("neoforge"))throw new IOException("NeoForge instance required: "+file);
+                if(loader!=null)candidate=text(metadata,"loader_version");
+            }
+            if(minecraft!=null&&!minecraft.equals("1.21.1"))throw new IOException("Minecraft 1.21.1 is required; "+file+" specifies "+minecraft);
+            if(candidate!=null){
+                if(!candidate.matches("[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.][A-Za-z0-9]+)*"))throw new IOException("Invalid NeoForge version in "+file+": "+candidate);
+                if(detected!=null&&!detected.equals(candidate))throw new IOException("Conflicting NeoForge versions in instance metadata: "+detected+" and "+candidate);
+                detected=candidate;
+            }
+        }return detected==null?"21.1.230":detected;
+    }
+    private static String text(JsonObject object,String key)throws IOException {
+        if(!object.has(key)||object.get(key).isJsonNull())return null;
+        var value=object.get(key);if(!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isString())throw new IOException("Instance metadata field must be a string: "+key);
+        return value.getAsString();
     }
     private JsonObject manifest(String id)throws IOException {
         if(!id.matches("(?:pack-[0-9a-f-]+|supported-[a-z_]+)"))throw new IllegalArgumentException("Invalid profile ID");

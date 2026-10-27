@@ -27,6 +27,22 @@ final class ProfileImportTest {
             GenerationContextTest.check(new String(library.getInputStream(library.getEntry("example/Marker.txt")).readAllBytes()).equals("unchanged classes"),"Nested content changed");
         }}
         GenerationContextTest.check(ProfileManager.hash(jar,"SHA-256").equals(before),"Nested extraction modified source jar");
+        metadataVersions(root);
         System.out.println("Profile copy, cancellation, identity and nested-library preservation passed");
+    }
+    private static void metadataVersions(Path root)throws Exception {
+        Path prism=root.resolve("prism");Files.createDirectories(prism);
+        Files.writeString(prism.resolve("mmc-pack.json"),"{\"components\":[{\"uid\":\"net.minecraft\",\"version\":\"1.21.1\"},{\"uid\":\"net.neoforged\",\"version\":\"21.1.172\"}]}");
+        GenerationContextTest.check(ProfileManager.detectVersion(prism).equals("21.1.172"),"Prism loader version replaced by test lock");
+        Path curse=root.resolve("curse");Files.createDirectories(curse);
+        Files.writeString(curse.resolve("manifest.json"),"{\"minecraft\":{\"version\":\"1.21.1\",\"modLoaders\":[{\"id\":\"neoforge-21.1.209\"}]}}");
+        GenerationContextTest.check(ProfileManager.detectVersion(curse).equals("21.1.209"),"CurseForge loader version replaced by test lock");
+        Path modrinth=root.resolve("modrinth");Files.createDirectories(modrinth);
+        Files.writeString(modrinth.resolve("profile.json"),"{\"metadata\":{\"game_version\":\"1.21.1\",\"loader\":\"neoforge\",\"loader_version\":\"21.1.220\"}}");
+        GenerationContextTest.check(ProfileManager.detectVersion(modrinth).equals("21.1.220"),"Modrinth profile loader version replaced by test lock");
+        Files.writeString(curse.resolve("manifest.json"),"{\"minecraft\":{\"version\":\"1.20.4\",\"modLoaders\":[{\"id\":\"neoforge-20.4.237\"}]}}");
+        try{ProfileManager.detectVersion(curse);throw new AssertionError("Wrong Minecraft version accepted");}catch(java.io.IOException expected){}
+        Files.writeString(prism.resolve("modrinth.index.json"),"{\"dependencies\":{\"minecraft\":\"1.21.1\",\"neoforge\":\"21.1.230\"}}");
+        try{ProfileManager.detectVersion(prism);throw new AssertionError("Conflicting loader versions silently replaced");}catch(java.io.IOException expected){}
     }
 }
